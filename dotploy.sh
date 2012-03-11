@@ -105,7 +105,7 @@ dosymlink() {
 	local dst=$2/$3
 
 	# backup existed file
-	[ -e $dst ] && \
+	([ -e $dst ] || [ -h $dst ]) && \
 		echo -en "BACKUP:\t" && \
 		local backup=${2#$HOME} && \
 		local backup=$BACKUP/${backup#/} && \
