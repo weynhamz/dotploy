@@ -43,6 +43,17 @@ DOTSREPO=$(realpath $1)
 # backup location, categarized by date
 BACKUP=$DOTSREPO/__BACKUP/$HOSTNAME/`date +%Y%m%d.%H.%M.%S`
 
+# preserved files
+IGNORE=(
+	"^__HOST"
+	"^__KEEPED"
+	"^__DOTDIR"
+	"^__BACKUP"
+	"^__UNUSED"
+	"^__IGNORE"
+	"^.git"
+	".swp$"
+)
 #
 # Function: dodeploy
 #
@@ -66,13 +77,15 @@ dodeploy() {
 	local file
 	for file in $filelist; do
 		# skip preserved filenames
-		[ "$file" = "__KEEPED" ] && continue
-		[ "$file" = "__DOTDIR" ] && continue
-		[ "$file" = "__BACKUP" ] && continue
-		[ "$file" = "__UNUSED" ] && continue
-		[ "$file" = ".git" ] && continue
-		echo $file | grep -q  "^__HOST" && continue
-		echo $file | grep -q '.swp$' && continue
+		local line
+		for line in ${IGNORE[@]};do
+			[[ $file =~ $line ]] && continue 2
+		done
+		if [ -f $dotdir/__IGNORE ]; then
+			for line in $(cat $dotdir/__IGNORE);do
+				[[ $file =~ $line ]] && continue 2
+			done
+		fi
 
 		if [ -d $dotdir/$file ]; then
 			if [ -e $dotdir/$file/__KEEPED ];then
