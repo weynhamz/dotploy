@@ -40,7 +40,7 @@ DOTSREPO=$(realpath $1)
 [ -f $DOTSREPO/__DOTDIR ] || exit 1
 
 # backup location, categarized by date
-BACKUP=$DOTSREPO/__BACKUP/`date +%Y%m%d.%H.%M.%S`
+BACKUP=$DOTSREPO/__BACKUP/$HOSTNAME/`date +%Y%m%d.%H.%M.%S`
 
 #
 # Function: dodeploy

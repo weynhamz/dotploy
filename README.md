@@ -26,12 +26,14 @@ The dot files structure must be keepd as same as they are in the original locati
 		|
 		|--------__BACKUP
 		|		|
-		|		|--------2012.03.12.14.05.03
-		|		|        ^^^^^^^^^^^^^^^^^^^
-		|		|        this is the backup directory of the conflict files
-		|		|        while deploying.
-		|		|
-		|		|--------......
+		|		|--------$HOSTNAME
+		|		|		|
+		|		|		|--------2012.03.12.14.05.03
+		|		|		|        ^^^^^^^^^^^^^^^^^^^
+		|		|		|        this is the backup directory of the conflict files
+		|		|		|        while deploying.
+		|		|		|
+		|		|		|--------......
 		|
 		|--------__UNUSED
 		|        ^^^^^^^^
