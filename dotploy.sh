@@ -38,7 +38,7 @@ DOTSREPO=$(realpath $1)
 [ -n "$2" ] && DESTHOME=$(realpath $2) || DESTHOME=$HOME
 
 # die if it is not a dotsrepo
-[ -f $DOTSREPO/__DOTDIR ] || exit 1
+[ -d $DOTSREPO ] && [ -f $DOTSREPO/__DOTDIR ] || exit 1
 
 # backup location, categarized by date
 BACKUP=$DOTSREPO/__BACKUP/$HOSTNAME/`date +%Y%m%d.%H.%M.%S`
