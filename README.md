@@ -1,7 +1,9 @@
 Usage
 -----
 
-	dotploy.sh PATH_TO_THE_DOTFILES_REPO
+	dotploy.sh PATH_TO_THE_DOTFILES_REPO [DESTINATION_OF_THE_DOT_FILES]
+
+DESTINATION_OF_THE_DOT_FILES is optional, if absent, current $HOME will be used.
 
 Summary
 -------

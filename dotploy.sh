@@ -5,7 +5,7 @@
 # Author: Techliv Zheng <techlivezheng at gmail.com>
 #
 # Usage:
-# 	dotploy.sh PATH_TO_THE_DOTFILES_REPO
+# 	dotploy.sh PATH_TO_THE_DOTFILES_REPO [DESTINATION_OF_THE_DOT_FILES]
 #
 # This is a bash only script designed to help easy the $HOME dot files deployment
 # acrossing several hosts. All the hosts share some common dot files. Host specific
@@ -35,6 +35,7 @@
 IFS=$'\n'
 
 DOTSREPO=$(realpath $1)
+[ -n "$2" ] && DESTHOME=$(realpath $2) || DESTHOME=$HOME
 
 # die if it is not a dotsrepo
 [ -f $DOTSREPO/__DOTDIR ] || exit 1
@@ -107,7 +108,7 @@ dosymlink() {
 	# backup existed file
 	([ -e $dst ] || [ -h $dst ]) && \
 		echo -en "BACKUP:\t" && \
-		local backup=${2#$HOME} && \
+		local backup=${2#$DESTHOME} && \
 		local backup=$BACKUP/${backup#/} && \
 		mkdir -vp $backup && \
 		mv -v $dst $backup
@@ -118,7 +119,7 @@ dosymlink() {
 }
 
 # deploy the public dotfiles
-dodeploy $DOTSREPO $HOME
+dodeploy $DOTSREPO $DESTHOME
 
 # host based dotfies deploy
 if [ -e $DOTSREPO/__HOST.$HOSTNAME ]; then
@@ -126,9 +127,9 @@ if [ -e $DOTSREPO/__HOST.$HOSTNAME ]; then
 
 	for file in $list; do
 		# this is created by the previous deployment, remove it.
-		[ -e $DOTSREPO/$file ] && [ -h $HOME/$file ] && rm -v $HOME/$file
+		[ -e $DOTSREPO/$file ] && [ -h $DESTHOME/$file ] && rm -v $DESTHOME/$file
 	done
 
 	# deploy host based dotfiles
-	dodeploy $DOTSREPO/__HOST.$HOSTNAME $HOME
+	dodeploy $DOTSREPO/__HOST.$HOSTNAME $DESTHOME
 fi
