@@ -22,10 +22,6 @@ The dot files structure must be keepd as same as they are in the original locati
 
 	DOTFILES_REPO
 		|
-		|--------__DOTDIR
-		|        ^^^^^^^^
-		|        this files indicates that this is a dotfils repo
-		|
 		|--------__BACKUP
 		|		|
 		|		|--------$HOSTNAME
@@ -42,7 +38,26 @@ The dot files structure must be keepd as same as they are in the original locati
 		|        this directory is no usesd, intend to place the dot files that are
 		|        nolonger used, but may be need oneday.
 		|
-		|--------__HOST.$HOSTNAME
+		|--------__DOTDIR
+		|		|
+		|		|--------__HOST.$HOSTNAME
+		|		|		|
+		|		|		|--------.dotfile1
+		|		|		|
+		|		|		|--------.dotfile2
+		|		|		|
+		|		|		|--------......
+		|		|		|
+		|		|		|--------.dotdir1
+		|		|		|		|
+		|		|		|		|--------__KEEPED
+		|		|		|		         ^^^^^^^^
+		|		|		|		         this means this directory shoulde not be deployed, instead,
+		|		|		|		         deploy its contents to the corresponding path under $HOME.
+		|		|		|
+		|		|		|--------.dotdir2
+		|		|		|
+		|		|		|--------......
 		|		|
 		|		|--------.dotfile1
 		|		|

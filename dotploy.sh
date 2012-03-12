@@ -34,22 +34,20 @@
 
 IFS=$'\n'
 
-DOTSREPO=$(realpath $1)
+DOTSHOME=$(realpath $1)
+DOTSREPO=$DOTSHOME/__DOTDIR
 [ -n "$2" ] && DESTHOME=$(realpath $2) || DESTHOME=$HOME
 
 # die if it is not a dotsrepo
-[ -d $DOTSREPO ] && [ -f $DOTSREPO/__DOTDIR ] || exit 1
+[ -d $DOTSHOME ] && [ -d $DOTSREPO ] || exit 1
 
 # backup location, categarized by date
-BACKUP=$DOTSREPO/__BACKUP/$HOSTNAME/`date +%Y%m%d.%H.%M.%S`
+BACKUP=$DOTSHOME/__BACKUP/$HOSTNAME/`date +%Y%m%d.%H.%M.%S`
 
 # preserved files
 IGNORE=(
 	"^__HOST"
 	"^__KEEPED"
-	"^__DOTDIR"
-	"^__BACKUP"
-	"^__UNUSED"
 	"^__IGNORE"
 	"^.git"
 	".swp$"
