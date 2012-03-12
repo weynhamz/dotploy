@@ -118,11 +118,20 @@ dosymlink() {
 	local src=$1/$3
 	local dst=$2/$3
 
+	local repath
+
+	repath=${1#$DOTSREPO}
+	repath=${repath#/}
+	repath=${repath#__HOST.$HOSTNAME}
+	repath=${repath#/}
+
+	# for nested path, need to mkdir parent first
+	[ -n "$repath" ] && mkdir -vp $DESTHOME/$repath
+
 	# backup existed file
 	([ -e $dst ] || [ -h $dst ]) && \
 		echo -en "BACKUP:\t" && \
-		local backup=${2#$DESTHOME} && \
-		local backup=$BACKUP/${backup#/} && \
+		local backup=$BACKUP/$repath && \
 		mkdir -vp $backup && \
 		mv -v $dst $backup
 
