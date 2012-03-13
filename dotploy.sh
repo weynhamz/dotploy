@@ -63,8 +63,15 @@ IGNORE=(
 #	$3	filename of the dotfile
 #
 docheck() {
-	local src=$1/$3
-	local dst=$2/$3
+	local src
+	local dst=$1
+	local repath
+
+	repath=${dst#$DESTHOME}
+	repath=${repath#/}
+
+	[ -e $DOTSREPO/$repath ] && src=$DOTSREPO/$repath
+	[ -e $DOTSREPO/__HOST.$HOSTNAME/$repath ] && src=$DOTSREPO/__HOST.$HOSTNAME/$repath
 
 	echo "CHECKING: $dst"
 
@@ -106,6 +113,10 @@ docheck() {
 dodeploy() {
 	local dotdir=$1
 	local dstdir=$2
+
+	# host based dotfies deploy
+	[ -e $dotdir/__HOST.$HOSTNAME ] && \
+		dodeploy $dotdir/__HOST.$HOSTNAME $dstdir
 
 	# recursive identifier
 	echo -e "--------\n$dotdir\n--------"
@@ -166,7 +177,7 @@ dosymlink() {
 	# for nested path, need to mkdir parent first
 	[ -n "$repath" ] && mkdir -vp $DESTHOME/$repath
 
-	docheck $1 $2 $3
+	docheck $dst
 
 	local status=$?
 
@@ -186,9 +197,4 @@ dosymlink() {
 		ln -v -s $src $dst
 }
 
-# deploy the public dotfiles
 dodeploy $DOTSREPO $DESTHOME
-
-# host based dotfies deploy
-[ -e $DOTSREPO/__HOST.$HOSTNAME ] && \
-	dodeploy $DOTSREPO/__HOST.$HOSTNAME $HOME
