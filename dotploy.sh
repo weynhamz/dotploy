@@ -69,7 +69,7 @@ docheck() {
 	echo "CHECKING: $dst"
 
 	if [ -h $dst ];then
-	    local csrc=$(stat --printf=%N $dst | sed 's/ -> /\t/g' | cut -f2 | sed 's/^"//g' | sed 's/"$//g')
+	    local csrc=$(readlink -f $dst)
 
 		if [[ $csrc =~ $DOTSREPO ]];then #whether link to dotsrepo
 			if [ "$csrc" == "$src" ];then
