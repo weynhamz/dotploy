@@ -90,7 +90,13 @@ docheck() {
 			#need backup
 			return 2
 		fi
-	elif [ -e $dst ];then
+	elif [ -d $dst ];then
+		[ -f $src/__KEEPED ] && \
+			#if dst is a dir,should check whether it contains high lever files
+			return 4 || \
+			#need backup
+			return 2
+	elif [ -f $dst ];then
 		#need backup
 		return 2
 	else
@@ -113,6 +119,15 @@ docheck() {
 dodeploy() {
 	local dotdir=$1
 	local dstdir=$2
+
+	# need to check the src,make sure it is a direcotry
+	docheck $dstdir
+
+	local status=$?
+
+	[ $status -eq 0 ] && return
+
+	[ $status -eq 1 ] && rm -v $dstdir
 
 	# host based dotfies deploy
 	[ -e $dotdir/__HOST.$HOSTNAME ] && \
@@ -192,7 +207,7 @@ dosymlink() {
 		mv -v $dst $backup
 
 	# Symlink
-	[ $status -ne 0 ] && \
+	[ $status -ne 0 ] && [ $status -ne 4 ] && \
 		echo -en "SYMLINK:\t" && \
 		ln -v -s $src $dst
 }
