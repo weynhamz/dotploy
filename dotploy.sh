@@ -190,14 +190,5 @@ dosymlink() {
 dodeploy $DOTSREPO $DESTHOME
 
 # host based dotfies deploy
-if [ -e $DOTSREPO/__HOST.$HOSTNAME ]; then
-	list=$(ls -1A $DOTSREPO/__HOST.$HOSTNAME)
-
-	for file in $list; do
-		# this is created by the previous deployment, remove it.
-		[ -e $DOTSREPO/$file ] && [ -h $DESTHOME/$file ] && rm -v $DESTHOME/$file
-	done
-
-	# deploy host based dotfiles
-	dodeploy $DOTSREPO/__HOST.$HOSTNAME $DESTHOME
-fi
+[ -e $DOTSREPO/__HOST.$HOSTNAME ] && \
+	dodeploy $DOTSREPO/__HOST.$HOSTNAME $HOME
