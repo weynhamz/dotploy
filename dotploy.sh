@@ -53,6 +53,46 @@ IGNORE=(
 	".swp$"
 )
 #
+# Function: docheck
+#
+# Check file status.
+#
+# Parameters:
+#	$1	source directory where dotfiles located
+#	$2	destination directory of the dotfiles
+#	$3	filename of the dotfile
+#
+docheck() {
+	local src=$1/$3
+	local dst=$2/$3
+
+	echo "CHECKING: $dst"
+
+	if [ -h $dst ];then
+	    local csrc=$(stat --printf=%N $dst | sed 's/ -> /\t/g' | cut -f2 | sed 's/^"//g' | sed 's/"$//g')
+
+		if [[ $csrc =~ $DOTSREPO ]];then #whether link to dotsrepo
+			if [ "$csrc" == "$src" ];then
+				#all good
+				return 0
+			else
+				#need update
+				return 1
+			fi
+		else
+			#need backup
+			return 2
+		fi
+	elif [ -e $dst ];then
+		#need backup
+		return 2
+	else
+		#not existed, do link
+		return 3
+	fi
+}
+
+#
 # Function: dodeploy
 #
 # Deploy files
@@ -126,15 +166,23 @@ dosymlink() {
 	# for nested path, need to mkdir parent first
 	[ -n "$repath" ] && mkdir -vp $DESTHOME/$repath
 
+	docheck $1 $2 $3
+
+	local status=$?
+
+	[ $status -eq 1 ] && \
+		rm -v $dst
+
 	# backup existed file
-	([ -e $dst ] || [ -h $dst ]) && \
+	[ $status -eq 2 ] && \
 		echo -en "BACKUP:\t" && \
 		local backup=$BACKUP/$repath && \
 		mkdir -vp $backup && \
 		mv -v $dst $backup
 
 	# Symlink
-	echo -en "SYMLINK:\t" && \
+	[ $status -ne 0 ] && \
+		echo -en "SYMLINK:\t" && \
 		ln -v -s $src $dst
 }
 
