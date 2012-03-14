@@ -49,7 +49,7 @@ IGNORE=(
 	"^__HOST"
 	"^__KEEPED"
 	"^__IGNORE"
-	"^.git"
+	"^.git$"
 	".swp$"
 )
 #
