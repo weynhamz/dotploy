@@ -66,6 +66,9 @@ done
 
 shift $((OPTIND - 1))
 
+# get real user name
+USER=$(id -nu)
+
 DOTSHOME=$(realpath $1)
 DOTSREPO=$DOTSHOME/__DOTDIR
 [ -n "$2" ] && DESTHOME=$(realpath $2) || DESTHOME=$HOME
