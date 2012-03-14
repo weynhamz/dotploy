@@ -78,7 +78,7 @@ docheck() {
 	if [ -h $dst ];then
 	    local csrc=$(readlink -fm $dst)
 
-		if [[ $csrc =~ $DOTSREPO ]];then #whether link to dotsrepo
+		if [[ $csrc =~ $DOTSHOME ]];then #whether link to dotsrepo
 			if [ "$csrc" == "$src" ];then
 				#all good
 				return 0
