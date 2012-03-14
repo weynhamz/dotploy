@@ -13,8 +13,9 @@
 #
 # This is a bash only script designed to help easy the $HOME dot files deployment
 # acrossing several hosts. All the hosts share some common dot files. Host specific
-# dot files are located under __HOST.$HOSTNAME directory which can overwrite the
-# common one with same name.
+# dot files are located under __HOST.$HOSTNAME directory, user specfic files are
+# located under __USER.$USER or ___HOST.$HOSTNAME/__USER.$USRE direcotry, the later
+# one with same name can overwrite the earlier one.
 #
 #################################################################################
 #
@@ -77,6 +78,7 @@ BACKUP=$DOTSHOME/__BACKUP/$HOSTNAME/`date +%Y%m%d.%H.%M.%S`
 
 # preserved files
 IGNORE=(
+	"^__USER"
 	"^__HOST"
 	"^__KEEPED"
 	"^__IGNORE"
@@ -125,7 +127,9 @@ docheck() {
 	repath=${repath#/}
 
 	[ -e $DOTSREPO/$repath ] && src=$DOTSREPO/$repath
+	[ -e $DOTSREPO/__USER.$USER/$repath ] && src=$DOTSREPO/__USER.$USER/$repath
 	[ -e $DOTSREPO/__HOST.$HOSTNAME/$repath ] && src=$DOTSREPO/__HOST.$HOSTNAME/$repath
+	[ -e $DOTSREPO/__HOST.$HOSTNAME/__USER.$USER/$repath ] && src=$DOTSREPO/__HOST.$HOSTNAME/__USER.$USER/$repath
 
 	echo "CHECKING: $dst"
 
@@ -183,9 +187,17 @@ dodeploy() {
 
 	[ $status -eq 1 ] && rm -v $dstdir
 
+	# host user based dotfies deploy
+	[ -e $dotdir/__HOST.$HOSTNAME/__USER.$USER ] && \
+		dodeploy $dotdir/__HOST.$HOSTNAME/__USER.$USER $dstdir
+
 	# host based dotfies deploy
 	[ -e $dotdir/__HOST.$HOSTNAME ] && \
 		dodeploy $dotdir/__HOST.$HOSTNAME $dstdir
+
+	# user based dotfies deploy
+	[ -e $dotdir/__USER.$USER ] && \
+		dodeploy $dotdir/__USER.$USER $dstdir
 
 	# recursive identifier
 	echo -e "--------\n$dotdir\n--------"
@@ -245,6 +257,8 @@ dosymlink() {
 	repath=${1#$DOTSREPO}
 	repath=${repath#/}
 	repath=${repath#__HOST.$HOSTNAME}
+	repath=${repath#/}
+	repath=${repath#__USER.$USER}
 	repath=${repath#/}
 
 	# for nested path, need to mkdir parent first
