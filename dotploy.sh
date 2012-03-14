@@ -5,7 +5,11 @@
 # Author: Techliv Zheng <techlivezheng at gmail.com>
 #
 # Usage:
-# 	dotploy.sh PATH_TO_THE_DOTFILES_REPO [DESTINATION_OF_THE_DOT_FILES]
+# 	dotploy.sh [OPTIONS] PATH_TO_THE_DOTFILES_REPO [DESTINATION_OF_THE_DOT_FILES]
+#
+# Options:
+# 	-r	prune broken symlinks according to the last dotploy.log
+# 	-d	deploy dotfiles
 #
 # This is a bash only script designed to help easy the $HOME dot files deployment
 # acrossing several hosts. All the hosts share some common dot files. Host specific
@@ -34,6 +38,33 @@
 
 IFS=$'\n'
 
+PRUNE=0
+DEPLOY=0
+
+while getopts ":rd" optname
+do
+	case "$optname" in
+		"r")
+			PRUNE=1
+			;;
+		"d")
+			PRUNE=1
+			DEPLOY=1
+			;;
+		":")
+			echo "No argument value for option $OPTARG"
+			;;
+		"?")
+			echo "Unknown option $OPTARG"
+			;;
+		*)
+			echo "Unknown error while processing options"
+			;;
+	esac
+done
+
+shift $((OPTIND - 1))
+
 DOTSHOME=$(realpath $1)
 DOTSREPO=$DOTSHOME/__DOTDIR
 [ -n "$2" ] && DESTHOME=$(realpath $2) || DESTHOME=$HOME
@@ -52,6 +83,29 @@ IGNORE=(
 	"^.git$"
 	".swp$"
 )
+
+#
+# Function: doprune
+#
+# Remove broken symlink according to the last dotploy.log
+#
+# Parameters:
+#	$1	dotploy log file
+#
+#
+doprune() {
+	local logfile=$1
+
+	local file
+	for file in $(cat $logfile); do
+		docheck $file
+
+		[ $? -eq 1 ] && rm -v $file
+
+		[ $DEPLOY -ne 1 ] && [ -e $file ] && echo $file >> $BACKUP/dotploy.log
+	done
+}
+
 #
 # Function: docheck
 #
@@ -164,6 +218,10 @@ dodeploy() {
 		elif [ -f $dotdir/$file ]; then
 			dosymlink $dotdir $dstdir $file
 		fi
+
+		grep "^$dstdir/$file\$" $BACKUP/dotploy.log >/dev/null 2>&1
+
+		[ $? -ne 0 ] && echo "$dstdir/$file" >> $BACKUP/dotploy.log
 	done
 }
 
@@ -212,4 +270,20 @@ dosymlink() {
 		ln -v -s $src $dst
 }
 
-dodeploy $DOTSREPO $DESTHOME
+mkdir -vp $BACKUP
+
+echo $DESTHOME > $BACKUP/DESTHOME
+
+touch $BACKUP/dotploy.log
+
+if [ $PRUNE -eq 1 ];then
+	for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOSTNAME/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
+		[ "$logpath" = "$BACKUP" ] && continue
+
+		[ -f $logfile ] && doprune $logpath/dotploy.log
+	done
+fi
+
+if [ $DEPLOY -eq 1 ];then
+	dodeploy $DOTSREPO $DESTHOME
+fi

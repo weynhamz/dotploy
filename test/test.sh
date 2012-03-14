@@ -3,4 +3,5 @@
 
 cd $(dirname ${BASH_SOURCE[0]})
 
-../dotploy.sh dotsrepo .
+../dotploy.sh -d dotsrepo .
+../dotploy.sh -r dotsrepo .
