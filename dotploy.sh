@@ -76,7 +76,7 @@ docheck() {
 	echo "CHECKING: $dst"
 
 	if [ -h $dst ];then
-	    local csrc=$(readlink -f $dst)
+	    local csrc=$(readlink -fm $dst)
 
 		if [[ $csrc =~ $DOTSREPO ]];then #whether link to dotsrepo
 			if [ "$csrc" == "$src" ];then
