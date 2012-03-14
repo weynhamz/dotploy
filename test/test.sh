@@ -1,5 +1,6 @@
 #!/bin/bash
 
+HOSTNAME='home'
 
 cd $(dirname ${BASH_SOURCE[0]})
 
