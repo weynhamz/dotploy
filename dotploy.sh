@@ -52,14 +52,8 @@ do
 			PRUNE=1
 			DEPLOY=1
 			;;
-		":")
-			echo "No argument value for option $OPTARG"
-			;;
 		"?")
 			echo "Unknown option $OPTARG"
-			;;
-		*)
-			echo "Unknown error while processing options"
 			;;
 	esac
 done
