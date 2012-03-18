@@ -287,7 +287,7 @@ dosymlink() {
 		ln -v -s $src $dst
 }
 
-mkdir -vp $BACKUP
+mkdir -vp $BACKUP || exit 1
 
 echo $DESTHOME > $BACKUP/DESTHOME
 
