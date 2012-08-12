@@ -4,19 +4,6 @@
 #
 # Author: Techliv Zheng <techlivezheng at gmail.com>
 #
-# Usage:
-#   dotploy.sh [OPTIONS] PATH_TO_THE_DOTFILES_REPO [DESTINATION_OF_THE_DOT_FILES]
-#
-# Options:
-#   -r  prune broken symlinks according to the last dotploy.log
-#   -d  deploy dotfiles
-#
-# This is a bash only script designed to help easy the $HOME dot files deployment
-# acrossing several hosts. All the hosts share some common dot files. Host specific
-# dot files are located under __HOST.$HOSTNAME directory, user specfic files are
-# located under __USER.$USER or ___HOST.$HOSTNAME/__USER.$USRE direcotry, the later
-# one with same name can overwrite the earlier one.
-#
 #################################################################################
 #
 # Copyright (C) 2012 Free Software Foundation.
@@ -42,7 +29,24 @@ IFS=$'\n'
 PRUNE=0
 DEPLOY=0
 
-while getopts ":rd" optname
+HELP=$(cat << 'EOF'
+
+Usage:
+  dotploy.sh [OPTIONS] PATH_TO_THE_DOTFILES_REPO [DESTINATION_OF_THE_DOT_FILES]
+
+Options:
+  -r  prune broken symlinks according to the last dotploy.log
+  -d  deploy dotfiles
+
+This is a bash only script designed to help easy the $HOME dot files deployment
+acrossing several hosts. All the hosts share some common dot files. Host specific
+dot files are located under __HOST.$HOSTNAME directory, user specfic files are
+located under __USER.$USER or ___HOST.$HOSTNAME/__USER.$USRE direcotry, the later
+one with same name can overwrite the earlier one.
+EOF
+)
+
+while getopts ":rdh" optname
 do
     case "$optname" in
         "r")
@@ -52,8 +56,13 @@ do
             PRUNE=1
             DEPLOY=1
             ;;
+        "h")
+            echo "$HELP"
+            exit 0
+            ;;
         "?")
             echo "ERROR: Unknown option $OPTARG"
+            echo "$HELP"
             exit 1
             ;;
     esac
