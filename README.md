@@ -25,10 +25,11 @@ How To Use it?
     The <destination_of_the_deployment> is optional. If it is absent, current
     $HOME will be used.
 
-Dotfils Repo Structure
+Dot Fils Repo Structure
 ----------------------
 
-The dot files structure must be keepd as same as they are in the original location.
+The dot files repo structure must be keepd as the same as they are in the
+original location.
 
     DOTFILES_REPO
         |
@@ -38,15 +39,17 @@ The dot files structure must be keepd as same as they are in the original locati
         |       |       |
         |       |       |--------2012.03.12.14.05.03
         |       |       |        ^^^^^^^^^^^^^^^^^^^
-        |       |       |        this is the backup directory of the conflict files
-        |       |       |        while deploying.
+        |       |       |        This is the backup directory of
+        |       |       |        the conflict files during the
+        |       |       |        deployment.
         |       |       |
         |       |       |--------......
         |
         |--------__UNUSED
         |        ^^^^^^^^
-        |        this directory is no usesd, intend to place the dot files that are
-        |        nolonger used, but may be need oneday.
+        |        This directory is not in use, in which I intend
+        |        to place some dot files that are nolonger used,
+        |        but might be needed someday.
         |
         |--------__DOTDIR
         |       |
@@ -64,8 +67,11 @@ The dot files structure must be keepd as same as they are in the original locati
         |       |       |       |       |
         |       |       |       |       |--------__KEEPED
         |       |       |       |                ^^^^^^^^
-        |       |       |       |                this means this directory shoulde not be deployed, instead,
-        |       |       |       |                deploy its contents to the corresponding path under $HOME.
+        |       |       |       |                This means this directory
+        |       |       |       |                shoulde not be symlinked,
+        |       |       |       |                instead, deploy its contents
+        |       |       |       |                to the corresponding location
+        |       |       |       |                under destination.
         |       |       |       |
         |       |       |       |--------.dotdir2
         |       |       |       |
@@ -81,9 +87,6 @@ The dot files structure must be keepd as same as they are in the original locati
         |       |       |--------.dotdir1
         |       |       |       |
         |       |       |       |--------__KEEPED
-        |       |       |                ^^^^^^^^
-        |       |       |                this means this directory shoulde not be deployed, instead,
-        |       |       |                deploy its contents to the corresponding path under $HOME.
         |       |       |
         |       |       |--------.dotdir2
         |       |       |
@@ -100,9 +103,6 @@ The dot files structure must be keepd as same as they are in the original locati
         |       |       |--------.dotdir1
         |       |       |       |
         |       |       |       |--------__KEEPED
-        |       |       |                ^^^^^^^^
-        |       |       |                this means this directory shoulde not be deployed, instead,
-        |       |       |                deploy its contents to the corresponding path under $HOME.
         |       |       |
         |       |       |--------.dotdir2
         |       |       |
@@ -117,9 +117,6 @@ The dot files structure must be keepd as same as they are in the original locati
         |       |--------.dotdir1
         |       |       |
         |       |       |--------__KEEPED
-        |       |                ^^^^^^^^
-        |       |                this means this directory shoulde not be deployed, instead,
-        |       |                deploy its contents to the corresponding path under $HOME.
         |       |
         |       |--------.dotdir2
         |       |
@@ -134,9 +131,6 @@ The dot files structure must be keepd as same as they are in the original locati
         |--------.dotdir1
         |       |
         |       |--------__KEEPED
-        |                ^^^^^^^^
-        |                this means this directory shoulde not be deployed, instead,
-        |                deploy its contents to the corresponding path under $HOME.
         |
         |--------.dotdir2
         |
