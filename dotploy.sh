@@ -53,7 +53,8 @@ do
             DEPLOY=1
             ;;
         "?")
-            echo "Unknown option $OPTARG"
+            echo "ERROR: Unknown option $OPTARG"
+            exit 1
             ;;
     esac
 done
