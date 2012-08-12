@@ -1,25 +1,29 @@
-Usage
------
+Dotploy
+=======
 
-    dotploy.sh [OPTIONS] PATH_TO_THE_DOTFILES_REPO [DESTINATION_OF_THE_DOT_FILES]
+This script was designed for ease of the dot files deployment under $HOME
+directory for mutiple users on several hosts.
+
+Some common dot files are shared by different users and hosts. Host specific
+dot files can be placed under \_\_HOST.$HOSTNAME directory, user specific dot
+files can be placed under \_\_USER.$USER or \_\_HOST.$HOSTNAME/\_\_USER.$USRE
+direcotry. The deeper nested file with same name has a higher priority.
+
+Developed and distributed under GPLv2 or later version.
+
+How To Use it?
+--------------
+
+    dotploy.sh [-d] <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+    dotploy.sh [-p] <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
 
     Options:
-        -p  prune broken symlinks according to the last dotploy.log
+
         -d  deploy dotfiles
+        -p  prune broken symlinks
 
-DESTINATION_OF_THE_DOT_FILES is optional, if absent, current $HOME will be used.
-
-Summary
--------
-
-This is a bash only script designed to help easy the $HOME dot files deployment
-acrossing several hosts. All the hosts share some common dot files. Host specific
-dot files are located under __HOST.$HOSTNAME directory, user specfic files are
-located under \_\_USER.$USER or \_\_HOST.$HOSTNAME/\_\_USER.$USRE direcotry, the later
-one with same name can overwrite the earlier one.
-
-
-Developed under GPLv2 or later version.
+    The <destination_of_the_deployment> is optional. If it is absent, current
+    $HOME will be used.
 
 Dotfils Repo Structure
 ----------------------
