@@ -4,7 +4,7 @@ Usage
     dotploy.sh [OPTIONS] PATH_TO_THE_DOTFILES_REPO [DESTINATION_OF_THE_DOT_FILES]
 
     Options:
-        -r  prune broken symlinks according to the last dotploy.log
+        -p  prune broken symlinks according to the last dotploy.log
         -d  deploy dotfiles
 
 DESTINATION_OF_THE_DOT_FILES is optional, if absent, current $HOME will be used.

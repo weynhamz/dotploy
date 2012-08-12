@@ -35,7 +35,7 @@ Usage:
   dotploy.sh [OPTIONS] PATH_TO_THE_DOTFILES_REPO [DESTINATION_OF_THE_DOT_FILES]
 
 Options:
-  -r  prune broken symlinks according to the last dotploy.log
+  -p  prune broken symlinks according to the last dotploy.log
   -d  deploy dotfiles
 
 This is a bash only script designed to help easy the $HOME dot files deployment
@@ -46,10 +46,10 @@ one with same name can overwrite the earlier one.
 EOF
 )
 
-while getopts ":rdh" optname
+while getopts ":pdh" optname
 do
     case "$optname" in
-        "r")
+        "p")
             PRUNE=1
             ;;
         "d")
