@@ -1,5 +1,7 @@
 #!/bin/bash
 
+[ -f ../../tests/bootstrap.sh ] && . ../../tests/bootstrap.sh
+
 USER='techlive'
 HOSTNAME='home'
 
@@ -56,7 +58,12 @@ __test_layer=(
     '__DOTDIR/__USER.techlive/.dotfile2'
     '__UNUSED/'
 )
-__test_field=$(dirname $0)'/test-field'
+
+if [ -n "$SHELL_TOOLKIT_TEST_FIELD" ]; then
+    __test_field=$SHELL_TOOLKIT_TEST_FIELD'/dotploy'
+else
+    __test_field=$(dirname $0)'/test-field'
+fi
 __test_dotsdest=$__test_field'/dotsdest'
 __test_dotsrepo=$__test_field'/dotsrepo'
 
