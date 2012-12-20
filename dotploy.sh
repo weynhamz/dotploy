@@ -318,7 +318,7 @@ if [ $PRUNE -eq 1 ];then
     for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOSTNAME/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
         [ "$logpath" = "$BACKUP" ] && continue
 
-        [ -f $logfile ] && doprune $logpath/dotploy.log
+        [ -f $logpath/dotploy.log ] && doprune $logpath/dotploy.log
     done
 fi
 
