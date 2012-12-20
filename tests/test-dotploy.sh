@@ -76,7 +76,7 @@ _basedir() {
     fi
 }
 
-_test_field() {
+_set_up() {
     mkdir -p $__test_dotsdest
     mkdir -p $__test_dotsrepo
     for layer in ${__test_layer[@]};do
@@ -84,7 +84,15 @@ _test_field() {
     done
 }
 
-_test_field
+_tear_down() {
+    rm -r $__test_dotsdest
+    rm -r $__test_dotsrepo
+}
 
+_set_up
 $(dirname $0)/../dotploy.sh -d $__test_dotsrepo $__test_dotsdest
+_tear_down
+
+_set_up
 $(dirname $0)/../dotploy.sh -p $__test_dotsrepo $__test_dotsdest
+_tear_down
