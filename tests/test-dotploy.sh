@@ -87,4 +87,4 @@ _test_field() {
 _test_field
 
 $(dirname $0)/../dotploy.sh -d $__test_dotsrepo $__test_dotsdest
-$(dirname $0)/../dotploy.sh -r $__test_dotsrepo $__test_dotsdest
+$(dirname $0)/../dotploy.sh -p $__test_dotsrepo $__test_dotsdest
