@@ -26,9 +26,6 @@
 
 IFS=$'\n'
 
-PRUNE=0
-DEPLOY=0
-
 HELP=$(cat << 'EOF'
 
 This script was designed for ease of the dot files deployment under $HOME
@@ -56,25 +53,37 @@ $HOME will be used.
 EOF
 )
 
+# preserved files
+IGNORE=(
+    "^__USER"
+    "^__HOST"
+    "^__KEEPED"
+    "^__IGNORE"
+    "^.git$"
+    ".swp$"
+)
+
+PRUNE=0
+DEPLOY=0
 while getopts ":pdh" optname
 do
     case "$optname" in
         "p")
             PRUNE=1
-            ;;
+        ;;
         "d")
             PRUNE=1
             DEPLOY=1
-            ;;
+        ;;
         "h")
             echo "$HELP"
             exit 0
-            ;;
+        ;;
         "?")
             echo "ERROR: Unknown option $OPTARG"
             echo "$HELP"
             exit 1
-            ;;
+        ;;
     esac
 done
 
@@ -93,16 +102,6 @@ DOTSREPO=$DOTSHOME/__DOTDIR
 # backup location, categarized by date
 BACKUP=$DOTSHOME/__BACKUP/$HOSTNAME/`date +%Y%m%d.%H.%M.%S`
 
-# preserved files
-IGNORE=(
-    "^__USER"
-    "^__HOST"
-    "^__KEEPED"
-    "^__IGNORE"
-    "^.git$"
-    ".swp$"
-)
-
 #
 # Function: doprune
 #
@@ -119,7 +118,9 @@ doprune() {
     for file in $(cat $logfile); do
         docheck $file
 
-        [ $? -eq 1 ] && rm -v $file
+        [ $? -eq 1 ] && {
+            rm -v $file
+        }
 
         [ $DEPLOY -ne 1 ] && [ -e $file ] && echo $file >> $BACKUP/dotploy.log
     done
@@ -166,11 +167,13 @@ docheck() {
             return 2
         fi
     elif [ -d $dst ];then
-        [ -f $src/__KEEPED ] && \
+        if [ -f $src/__KEEPED ];then
             #if dst is a dir,should check whether it contains high lever files
-            return 4 || \
+            return 4
+        else
             #need backup
             return 2
+        fi
     elif [ -f $dst ];then
         #need backup
         return 2
@@ -229,6 +232,7 @@ dodeploy() {
             [[ $file =~ $line ]] && continue 2
         done
         if [ -f $dotdir/__IGNORE ]; then
+            local line
             for line in $(cat $dotdir/__IGNORE);do
                 [[ $file =~ $line ]] && continue 2
             done
@@ -279,26 +283,29 @@ dosymlink() {
     repath=${repath#/}
 
     # for nested path, need to mkdir parent first
-    [ -n "$repath" ] && mkdir -vp $DESTHOME/$repath
+    [ -n "$repath" ] && {
+        mkdir -vp $DESTHOME/$repath
+    }
 
     docheck $dst
 
     local status=$?
 
-    [ $status -eq 1 ] && \
+    [ $status -eq 1 ] && {
         rm -v $dst
+    }
 
     # backup existed file
-    [ $status -eq 2 ] && \
-        echo -en "BACKUP:\t" && \
-        local backup=$BACKUP/$repath && \
-        mkdir -vp $backup && \
-        mv -v $dst $backup
+    [ $status -eq 2 ] && {
+        echo -en "BACKUP:\t"
+        mkdir -vp $BACKUP/$repath && mv -v $dst $BACKUP/$repath
+    }
 
     # Symlink
-    [ $status -ne 0 ] && [ $status -ne 4 ] && \
-        echo -en "SYMLINK:\t" && \
+    [ $status -ne 0 ] && [ $status -ne 4 ] && {
+        echo -en "SYMLINK:\t"
         ln -v -s $src $dst
+    }
 }
 
 mkdir -vp $BACKUP || exit 1

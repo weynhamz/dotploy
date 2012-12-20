@@ -64,6 +64,7 @@ if [ -n "$SHELL_TOOLKIT_TEST_FIELD" ]; then
 else
     __test_field=$(dirname $0)'/test-field'
 fi
+
 __test_dotsdest=$__test_field'/dotsdest'
 __test_dotsrepo=$__test_field'/dotsrepo'
 
@@ -79,8 +80,7 @@ _test_field() {
     mkdir -p $__test_dotsdest
     mkdir -p $__test_dotsrepo
     for layer in ${__test_layer[@]};do
-        mkdir -p $__test_dotsrepo'/'$(_basedir $layer)
-        [ -d $__test_dotsrepo'/'$(_basedir $layer) ] || touch $layer
+        mkdir -p $__test_dotsrepo'/'$(_basedir $layer) && touch $layer
     done
 }
 
