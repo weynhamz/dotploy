@@ -80,7 +80,7 @@ _test_field() {
     mkdir -p $__test_dotsdest
     mkdir -p $__test_dotsrepo
     for layer in ${__test_layer[@]};do
-        mkdir -p $__test_dotsrepo'/'$(_basedir $layer) && touch $layer
+        mkdir -p $__test_dotsrepo'/'$(_basedir $layer) && touch $__test_dotsrepo'/'$layer
     done
 }
 
