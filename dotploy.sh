@@ -94,10 +94,14 @@ USER=$(id -nu)
 
 DOTSHOME=$(realpath $1)
 DOTSREPO=$DOTSHOME/__DOTDIR
-[ -n "$2" ] && DESTHOME=$(realpath $2) || DESTHOME=$HOME
 
 # die if it is not a dotsrepo
 [ -d $DOTSHOME ] && [ -d $DOTSREPO ] || exit 1
+
+DESTHOME=$(realpath ${2:-$HOME})
+
+# make sure our destination is there
+[ -d $DESTHOME ] || exit 1
 
 # backup location, categarized by date
 BACKUP=$DOTSHOME/__BACKUP/$HOSTNAME/`date +%Y%m%d.%H.%M.%S`
