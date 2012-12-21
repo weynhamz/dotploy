@@ -26,6 +26,11 @@
 
 IFS=$'\n'
 
+# get real user name
+USER=$(id -nu)
+
+[[ -z $USER ]] && die "Unkown user"
+
 HELP=$(cat << 'EOF'
 
 This script was designed for ease of the dot files deployment under $HOME
@@ -89,9 +94,6 @@ done
 
 shift $((OPTIND - 1))
 
-# get real user name
-USER=$(id -nu)
-
 DOTSHOME=$(realpath $1)
 DOTSREPO=$DOTSHOME/__DOTDIR
 
@@ -105,6 +107,11 @@ DESTHOME=$(realpath ${2:-$HOME})
 
 # backup location, categarized by date
 BACKUP=$DOTSHOME/__BACKUP/$HOSTNAME/`date +%Y%m%d.%H.%M.%S`
+
+die() {
+    echo "$1"
+    exit "${2:-1}"
+}
 
 #
 # Function: doprune
