@@ -207,18 +207,6 @@ dodeploy() {
 
     [ $status -eq 1 ] && rm -v $dstdir
 
-    # host user based dotfies deploy
-    [ -e $dotdir/__HOST.$HOSTNAME/__USER.$USER ] && \
-        dodeploy $dotdir/__HOST.$HOSTNAME/__USER.$USER $dstdir
-
-    # host based dotfies deploy
-    [ -e $dotdir/__HOST.$HOSTNAME ] && \
-        dodeploy $dotdir/__HOST.$HOSTNAME $dstdir
-
-    # user based dotfies deploy
-    [ -e $dotdir/__USER.$USER ] && \
-        dodeploy $dotdir/__USER.$USER $dstdir
-
     # recursive identifier
     echo -e "--------\n$dotdir\n--------"
 
@@ -323,5 +311,17 @@ if [ $PRUNE -eq 1 ];then
 fi
 
 if [ $DEPLOY -eq 1 ];then
+    # host user based dotfies deploy
+    [ -e $DOTSREPO/__HOST.$HOSTNAME/__USER.$USER ] && \
+        dodeploy $DOTSREPO/__HOST.$HOSTNAME/__USER.$USER $DESTHOME
+
+    # host based dotfies deploy
+    [ -e $DOTSREPO/__HOST.$HOSTNAME ] && \
+        dodeploy $DOTSREPO/__HOST.$HOSTNAME $DESTHOME
+
+    # user based dotfies deploy
+    [ -e $DOTSREPO/__USER.$USER ] && \
+        dodeploy $DOTSREPO/__USER.$USER $DESTHOME
+
     dodeploy $DOTSREPO $DESTHOME
 fi
