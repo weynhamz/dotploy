@@ -31,6 +31,11 @@ USER=$(id -nu)
 
 [[ -z $USER ]] && die "Unkown user"
 
+# get current host name
+HOST=$HOSTNAME
+
+[[ -z $HOST ]] && die "Unkown host"
+
 HELP=$(cat << 'EOF'
 
 This script was designed for ease of the dot files deployment under $HOME
@@ -106,7 +111,7 @@ DESTHOME=$(realpath ${2:-$HOME})
 [ -d $DESTHOME ] || exit 1
 
 # backup location, categarized by date
-BACKUP=$DOTSHOME/__BACKUP/$HOSTNAME/`date +%Y%m%d.%H.%M.%S`
+BACKUP=$DOTSHOME/__BACKUP/$HOST/`date +%Y%m%d.%H.%M.%S`
 
 die() {
     echo "$1"
@@ -157,8 +162,8 @@ docheck() {
 
     [ -e $DOTSREPO/$repath ] && src=$DOTSREPO/$repath
     [ -e $DOTSREPO/__USER.$USER/$repath ] && src=$DOTSREPO/__USER.$USER/$repath
-    [ -e $DOTSREPO/__HOST.$HOSTNAME/$repath ] && src=$DOTSREPO/__HOST.$HOSTNAME/$repath
-    [ -e $DOTSREPO/__HOST.$HOSTNAME/__USER.$USER/$repath ] && src=$DOTSREPO/__HOST.$HOSTNAME/__USER.$USER/$repath
+    [ -e $DOTSREPO/__HOST.$HOST/$repath ] && src=$DOTSREPO/__HOST.$HOST/$repath
+    [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
 
     echo "CHECKING: $dst"
 
@@ -276,7 +281,7 @@ dosymlink() {
 
     repath=${1#$DOTSREPO}
     repath=${repath#/}
-    repath=${repath#__HOST.$HOSTNAME}
+    repath=${repath#__HOST.$HOST}
     repath=${repath#/}
     repath=${repath#__USER.$USER}
     repath=${repath#/}
@@ -314,7 +319,7 @@ echo $DESTHOME > $BACKUP/DESTHOME
 touch $BACKUP/dotploy.log
 
 if [ $PRUNE -eq 1 ];then
-    for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOSTNAME/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
+    for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
         [ "$logpath" = "$BACKUP" ] && continue
 
         [ -f $logpath/dotploy.log ] && doprune $logpath/dotploy.log
@@ -323,12 +328,12 @@ fi
 
 if [ $DEPLOY -eq 1 ];then
     # host user based dotfies deploy
-    [ -e $DOTSREPO/__HOST.$HOSTNAME/__USER.$USER ] && \
-        dodeploy $DOTSREPO/__HOST.$HOSTNAME/__USER.$USER $DESTHOME
+    [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
+        dodeploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
 
     # host based dotfies deploy
-    [ -e $DOTSREPO/__HOST.$HOSTNAME ] && \
-        dodeploy $DOTSREPO/__HOST.$HOSTNAME $DESTHOME
+    [ -e $DOTSREPO/__HOST.$HOST ] && \
+        dodeploy $DOTSREPO/__HOST.$HOST $DESTHOME
 
     # user based dotfies deploy
     [ -e $DOTSREPO/__USER.$USER ] && \
