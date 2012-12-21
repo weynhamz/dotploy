@@ -50,11 +50,7 @@ Developed and distributed under GPLv2 or later version.
 
 Usage:
 
-    dotploy.sh [-d] <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
-
-Options:
-
-    -d  deploy dotfiles
+    dotploy.sh <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
 
 The <destination_of_the_deployment> is optional. If it is absent, current
 $HOME will be used.
@@ -71,7 +67,6 @@ IGNORE=(
     ".swp$"
 )
 
-DEPLOY=0
 while getopts ":pdh" optname
 do
     case "$optname" in
@@ -81,7 +76,9 @@ do
             exit 1
         ;;
         "d")
-            DEPLOY=1
+            echo "Option '-d' has been depreciated"
+            echo "$HELP"
+            exit 1
         ;;
         "h")
             echo "$HELP"
@@ -317,24 +314,22 @@ LOGFILE=$BAKPATH/dotploy.log
 
 touch $LOGFILE
 
-if [ $DEPLOY -eq 1 ];then
-    for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
-        [ "$logpath" = "$BAKPATH" ] && continue
+for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
+    [ "$logpath" = "$BAKPATH" ] && continue
 
-        [ -f $logpath/dotploy.log ] && doprune $logpath/dotploy.log
-    done
+    [ -f $logpath/dotploy.log ] && doprune $logpath/dotploy.log
+done
 
-    # host user based dotfies deploy
-    [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
-        dodeploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
+# host user based dotfies deploy
+[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
+    dodeploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
 
-    # host based dotfies deploy
-    [ -e $DOTSREPO/__HOST.$HOST ] && \
-        dodeploy $DOTSREPO/__HOST.$HOST $DESTHOME
+# host based dotfies deploy
+[ -e $DOTSREPO/__HOST.$HOST ] && \
+    dodeploy $DOTSREPO/__HOST.$HOST $DESTHOME
 
-    # user based dotfies deploy
-    [ -e $DOTSREPO/__USER.$USER ] && \
-        dodeploy $DOTSREPO/__USER.$USER $DESTHOME
+# user based dotfies deploy
+[ -e $DOTSREPO/__USER.$USER ] && \
+    dodeploy $DOTSREPO/__USER.$USER $DESTHOME
 
-    dodeploy $DOTSREPO $DESTHOME
-fi
+dodeploy $DOTSREPO $DESTHOME

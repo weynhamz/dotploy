@@ -90,5 +90,5 @@ _tear_down() {
 }
 
 _set_up
-$(dirname $0)/../dotploy.sh -d $__test_dotsrepo $__test_dotsdest
+$(dirname $0)/../dotploy.sh $__test_dotsrepo $__test_dotsdest
 _tear_down
