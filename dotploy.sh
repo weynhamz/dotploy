@@ -111,7 +111,7 @@ DESTHOME=$(realpath ${2:-$HOME})
 [ -d $DESTHOME ] || exit 1
 
 # backup location, categarized by date
-BACKUP=$DOTSHOME/__BACKUP/$HOST/`date +%Y%m%d.%H.%M.%S`
+BAKPATH=$DOTSHOME/__BACKUP/$HOST/`date +%Y%m%d.%H.%M.%S`
 
 die() {
     echo "$1"
@@ -138,7 +138,7 @@ doprune() {
             rm -v $file
         }
 
-        [ $DEPLOY -ne 1 ] && [ -e $file ] && echo $file >> $BACKUP/dotploy.log
+        [ $DEPLOY -ne 1 ] && [ -e $file ] && echo $file >> $BAKPATH/dotploy.log
     done
 }
 
@@ -256,9 +256,9 @@ dodeploy() {
             dosymlink $dotdir $dstdir $file
         fi
 
-        grep "^$dstdir/$file\$" $BACKUP/dotploy.log >/dev/null 2>&1
+        grep "^$dstdir/$file\$" $BAKPATH/dotploy.log >/dev/null 2>&1
 
-        [ $? -ne 0 ] && echo "$dstdir/$file" >> $BACKUP/dotploy.log
+        [ $? -ne 0 ] && echo "$dstdir/$file" >> $BAKPATH/dotploy.log
     done
 }
 
@@ -302,7 +302,7 @@ dosymlink() {
     # backup existed file
     [ $status -eq 2 ] && {
         echo -en "BACKUP:\t"
-        mkdir -vp $BACKUP/$repath && mv -v $dst $BACKUP/$repath
+        mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath
     }
 
     # Symlink
@@ -312,15 +312,15 @@ dosymlink() {
     }
 }
 
-mkdir -vp $BACKUP || exit 1
+mkdir -vp $BAKPATH || exit 1
 
-echo $DESTHOME > $BACKUP/DESTHOME
+echo $DESTHOME > $BAKPATH/DESTHOME
 
-touch $BACKUP/dotploy.log
+touch $BAKPATH/dotploy.log
 
 if [ $PRUNE -eq 1 ];then
     for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
-        [ "$logpath" = "$BACKUP" ] && continue
+        [ "$logpath" = "$BAKPATH" ] && continue
 
         [ -f $logpath/dotploy.log ] && doprune $logpath/dotploy.log
     done
