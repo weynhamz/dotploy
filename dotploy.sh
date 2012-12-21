@@ -51,12 +51,10 @@ Developed and distributed under GPLv2 or later version.
 Usage:
 
     dotploy.sh [-d] <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
-    dotploy.sh [-p] <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
 
 Options:
 
     -d  deploy dotfiles
-    -p  prune broken symlinks
 
 The <destination_of_the_deployment> is optional. If it is absent, current
 $HOME will be used.
@@ -73,16 +71,16 @@ IGNORE=(
     ".swp$"
 )
 
-PRUNE=0
 DEPLOY=0
 while getopts ":pdh" optname
 do
     case "$optname" in
         "p")
-            PRUNE=1
+            echo "Option '-p' has been depreciated"
+            echo "$HELP"
+            exit 1
         ;;
         "d")
-            PRUNE=1
             DEPLOY=1
         ;;
         "h")
@@ -137,8 +135,6 @@ doprune() {
         [ $? -eq 1 ] && {
             rm -v $file
         }
-
-        [ $DEPLOY -ne 1 ] && [ -e $file ] && echo $file >> $LOGFILE
     done
 }
 
@@ -321,15 +317,13 @@ LOGFILE=$BAKPATH/dotploy.log
 
 touch $LOGFILE
 
-if [ $PRUNE -eq 1 ];then
+if [ $DEPLOY -eq 1 ];then
     for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
         [ "$logpath" = "$BAKPATH" ] && continue
 
         [ -f $logpath/dotploy.log ] && doprune $logpath/dotploy.log
     done
-fi
 
-if [ $DEPLOY -eq 1 ];then
     # host user based dotfies deploy
     [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
         dodeploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
