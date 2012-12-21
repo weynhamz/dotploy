@@ -138,7 +138,7 @@ doprune() {
             rm -v $file
         }
 
-        [ $DEPLOY -ne 1 ] && [ -e $file ] && echo $file >> $BAKPATH/dotploy.log
+        [ $DEPLOY -ne 1 ] && [ -e $file ] && echo $file >> $LOGFILE
     done
 }
 
@@ -256,9 +256,9 @@ dodeploy() {
             dosymlink $dotdir $dstdir $file
         fi
 
-        grep "^$dstdir/$file\$" $BAKPATH/dotploy.log >/dev/null 2>&1
+        grep "^$dstdir/$file\$" $LOGFILE >/dev/null 2>&1
 
-        [ $? -ne 0 ] && echo "$dstdir/$file" >> $BAKPATH/dotploy.log
+        [ $? -ne 0 ] && echo "$dstdir/$file" >> $LOGFILE
     done
 }
 
@@ -316,7 +316,10 @@ mkdir -vp $BAKPATH || exit 1
 
 echo $DESTHOME > $BAKPATH/DESTHOME
 
-touch $BAKPATH/dotploy.log
+# keep record of deployed files
+LOGFILE=$BAKPATH/dotploy.log
+
+touch $LOGFILE
 
 if [ $PRUNE -eq 1 ];then
     for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
