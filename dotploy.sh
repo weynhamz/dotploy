@@ -36,27 +36,6 @@ HOST=$HOSTNAME
 
 [[ -z $HOST ]] && die "Unkown host"
 
-HELP=$(cat << 'EOF'
-
-This script was designed for ease of the dot files deployment under $HOME
-directory for mutiple users on several hosts.
-
-Some common dot files are shared by different users and hosts. Host specific
-dot files can be placed under __HOST.$HOSTNAME directory, user specific dot
-files can be placed under __USER.$USER or __HOST.$HOSTNAME/__USER.$USRE
-direcotry. The deeper nested file with same name has a higher priority.
-
-Developed and distributed under GPLv2 or later version.
-
-Usage:
-
-    dotploy.sh <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
-
-The <destination_of_the_deployment> is optional. If it is absent, current
-$HOME will be used.
-EOF
-)
-
 # preserved files
 IGNORE=(
     "^__USER"
@@ -72,21 +51,21 @@ do
     case "$optname" in
         "p")
             echo "Option '-p' has been depreciated"
-            echo "$HELP"
+            show_help
             exit 1
         ;;
         "d")
             echo "Option '-d' has been depreciated"
-            echo "$HELP"
+            show_help
             exit 1
         ;;
         "h")
-            echo "$HELP"
+            show_help
             exit 0
         ;;
         "?")
             echo "ERROR: Unknown option $OPTARG"
-            echo "$HELP"
+            show_help
             exit 1
         ;;
     esac
@@ -303,6 +282,29 @@ dosymlink() {
         echo -en "SYMLINK:\t"
         ln -v -s $src $dst
     }
+}
+
+show_help() {
+    cat << 'EOF'
+
+This script was designed for ease of the dot files deployment under $HOME
+directory for mutiple users on several hosts.
+
+Some common dot files are shared by different users and hosts. Host specific
+dot files can be placed under __HOST.$HOSTNAME directory, user specific dot
+files can be placed under __USER.$USER or __HOST.$HOSTNAME/__USER.$USRE
+direcotry. The deeper nested file with same name has a higher priority.
+
+Developed and distributed under GPLv2 or later version.
+
+Usage:
+
+    dotploy.sh <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+
+The <destination_of_the_deployment> is optional. If it is absent, current
+$HOME will be used.
+
+EOF
 }
 
 mkdir -vp $BAKPATH || exit 1
