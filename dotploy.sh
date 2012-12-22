@@ -297,12 +297,12 @@ DOTSHOME=$(realpath $1)
 DOTSREPO=$DOTSHOME/__DOTDIR
 
 # die if it is not a dotsrepo
-[ -d $DOTSHOME ] && [ -d $DOTSREPO ] || exit 1
+[ -d $DOTSHOME ] && [ -d $DOTSREPO ] || die "$DOTSREPO is not available"
 
 DESTHOME=$(realpath ${2:-$HOME})
 
 # make sure our destination is there
-[ -d $DESTHOME ] || exit 1
+[ -d $DESTHOME ] || die "$DESTHOME is not available"
 
 # backup location, categarized by date
 BAKPATH=$DOTSHOME/__BACKUP/$HOST/`date +%Y%m%d.%H.%M.%S`
