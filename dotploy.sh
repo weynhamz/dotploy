@@ -22,7 +22,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-##################################################################################
+#################################################################################
 
 IFS=$'\n'
 
@@ -54,11 +54,10 @@ die() {
 #
 # Function: doprune
 #
-# Remove broken symlink according to the last dotploy.log
+# Remove broken symlinks
 #
 # Parameters:
-#   $1  dotploy log file
-#
+#   $1  log file recorded the deployed symlinks
 #
 doprune() {
     local logfile=$1
@@ -76,12 +75,17 @@ doprune() {
 #
 # Function: docheck
 #
-# Check file status.
+# Check the status of a given file
 #
 # Parameters:
-#   $1  source directory where dotfiles located
-#   $2  destination directory of the dotfiles
-#   $3  filename of the dotfile
+#   $1  target file to be checked
+#
+# Return Value:
+#   0 all good
+#   1 need update
+#   2 need backup
+#   3 not existed, do link
+#   4 do nothing, deploy its contents
 #
 docheck() {
     local src
@@ -101,31 +105,24 @@ docheck() {
     if [ -h $dst ];then
         local csrc=$(readlink -fm $dst)
 
-        if [[ $csrc =~ $DOTSHOME ]];then #whether link to dotsrepo
+        if [[ $csrc =~ $DOTSHOME ]];then
             if [ "$csrc" == "$src" ];then
-                #all good
                 return 0
             else
-                #need update
                 return 1
             fi
         else
-            #need backup
             return 2
         fi
     elif [ -d $dst ];then
         if [ -f $src/__KEEPED ];then
-            #if dst is a dir,should check whether it contains high lever files
             return 4
         else
-            #need backup
             return 2
         fi
     elif [ -f $dst ];then
-        #need backup
         return 2
     else
-        #not existed, do link
         return 3
     fi
 }
@@ -136,10 +133,10 @@ docheck() {
 # Deploy files
 #
 # Parameters:
-#   $1  directory containing files to be deployed
+#   $1  directory containing dot files
 #   $2  directory where files need to go
 #
-# This function can be recursive called.
+# This function can be called recursively.
 #
 dodeploy() {
     local dotdir=$1
@@ -157,6 +154,8 @@ dodeploy() {
         for line in ${IGNORE[@]};do
             [[ $file =~ $line ]] && continue 2
         done
+
+        # apply user-defined ignoring rules
         if [ -f $dotdir/__IGNORE ]; then
             local line
             for line in $(cat $dotdir/__IGNORE);do
@@ -166,8 +165,8 @@ dodeploy() {
 
         if [ -d $dotdir/$file ]; then
             if [ -e $dotdir/$file/__KEEPED ];then
-                # this is a directory needed to be keeped,
-                # deploy its content.
+                # this directory needs to be kept,
+                # deploy its contents.
                 dodeploy $dotdir/$file $dstdir/$file
                 # recursive identifier
                 echo -e "--------\n$dotdir\n--------"
@@ -187,12 +186,13 @@ dodeploy() {
 #
 # Function: dosymlink
 #
-# Make symlink.
-# If destination file existed, backup first.
+# Make a symlink.
+#
+# If the target file exists, backup it first.
 #
 # Parameters:
-#   $1  source directory where dotfiles located
-#   $2  destination directory of the dotfiles
+#   $1  source directory where the dotfile is located
+#   $2  target directory where the dotfile will be deployed
 #   $3  filename of the dotfile
 #
 dosymlink() {
@@ -221,6 +221,7 @@ dosymlink() {
 
     local status=$?
 
+    # remove broken link
     [ $status -eq 1 ] && {
         rm -v $dst
     }
@@ -231,7 +232,7 @@ dosymlink() {
         mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath
     }
 
-    # Symlink
+    # symlink the file in the repo
     [ $status -ne 0 ] && [ $status -ne 4 ] && {
         echo -en "SYMLINK:\t"
         ln -v -s $src $dst
@@ -241,22 +242,24 @@ dosymlink() {
 show_help() {
     cat << 'EOF'
 
-This script was designed for ease of the dot files deployment under $HOME
+This script is designed for ease of deploying the dot files under $HOME
 directory for mutiple users on several hosts.
 
-Some common dot files are shared by different users and hosts. Host specific
-dot files can be placed under __HOST.$HOSTNAME directory, user specific dot
-files can be placed under __USER.$USER or __HOST.$HOSTNAME/__USER.$USRE
-direcotry. The deeper nested file with same name has a higher priority.
+Common dot files need to be shared with different users on different hosts
+could be placed in the root directory of the dots repo.  While host specific
+dot files could be placed under `__HOST.$HOSTNAME` directory, and user specific
+dot files be placed under `__USER.$USER` or `__HOST.$HOSTNAME/__USER.$USRE`
+direcotry. The file in the specified host or user directory with same name
+has higher priority.
 
-Developed and distributed under GPLv2 or later version.
+This script is developed and distributed under GPLv2 or later version.
 
 Usage:
 
     dotploy.sh <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
 
-The <destination_of_the_deployment> is optional. If it is absent, current
-$HOME will be used.
+The `<destination_of_the_deployment>` is optional. If absent, current `$HOME`
+directory will be used.
 
 EOF
 }
@@ -304,13 +307,15 @@ BAKPATH=$DOTSHOME/__BACKUP/$HOST/`date +%Y%m%d.%H.%M.%S`
 
 mkdir -vp $BAKPATH || exit 1
 
+# used to identify where our backup came from
 echo $DESTHOME > $BAKPATH/DESTHOME
 
-# keep record of deployed files
+# keep a record of the deployed files
 LOGFILE=$BAKPATH/dotploy.log
 
 touch $LOGFILE
 
+# remove the broken symlinks since last deployment first
 for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
     [ "$logpath" = "$BAKPATH" ] && continue
 
@@ -329,4 +334,5 @@ done
 [ -d $DOTSREPO/__USER.$USER ] && \
     dodeploy $DOTSREPO/__USER.$USER $DESTHOME
 
+# shared dotfiles deploy
 dodeploy $DOTSREPO $DESTHOME
