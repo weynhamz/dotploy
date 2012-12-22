@@ -46,47 +46,6 @@ IGNORE=(
     ".swp$"
 )
 
-while getopts ":pdh" optname
-do
-    case "$optname" in
-        "p")
-            echo "Option '-p' has been depreciated"
-            show_help
-            exit 1
-        ;;
-        "d")
-            echo "Option '-d' has been depreciated"
-            show_help
-            exit 1
-        ;;
-        "h")
-            show_help
-            exit 0
-        ;;
-        "?")
-            echo "ERROR: Unknown option $OPTARG"
-            show_help
-            exit 1
-        ;;
-    esac
-done
-
-shift $((OPTIND - 1))
-
-DOTSHOME=$(realpath $1)
-DOTSREPO=$DOTSHOME/__DOTDIR
-
-# die if it is not a dotsrepo
-[ -d $DOTSHOME ] && [ -d $DOTSREPO ] || exit 1
-
-DESTHOME=$(realpath ${2:-$HOME})
-
-# make sure our destination is there
-[ -d $DESTHOME ] || exit 1
-
-# backup location, categarized by date
-BAKPATH=$DOTSHOME/__BACKUP/$HOST/`date +%Y%m%d.%H.%M.%S`
-
 die() {
     echo "$1"
     exit "${2:-1}"
@@ -306,6 +265,47 @@ $HOME will be used.
 
 EOF
 }
+
+while getopts ":pdh" optname
+do
+    case "$optname" in
+        "p")
+            echo "Option '-p' has been depreciated"
+            show_help
+            exit 1
+        ;;
+        "d")
+            echo "Option '-d' has been depreciated"
+            show_help
+            exit 1
+        ;;
+        "h")
+            show_help
+            exit 0
+        ;;
+        "?")
+            echo "ERROR: Unknown option $OPTARG"
+            show_help
+            exit 1
+        ;;
+    esac
+done
+
+shift $((OPTIND - 1))
+
+DOTSHOME=$(realpath $1)
+DOTSREPO=$DOTSHOME/__DOTDIR
+
+# die if it is not a dotsrepo
+[ -d $DOTSHOME ] && [ -d $DOTSREPO ] || exit 1
+
+DESTHOME=$(realpath ${2:-$HOME})
+
+# make sure our destination is there
+[ -d $DESTHOME ] || exit 1
+
+# backup location, categarized by date
+BAKPATH=$DOTSHOME/__BACKUP/$HOST/`date +%Y%m%d.%H.%M.%S`
 
 mkdir -vp $BAKPATH || exit 1
 
