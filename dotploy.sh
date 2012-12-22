@@ -145,15 +145,6 @@ dodeploy() {
     local dotdir=$1
     local dstdir=$2
 
-    # need to check the src,make sure it is a direcotry
-    docheck $dstdir
-
-    local status=$?
-
-    [ $status -eq 0 ] && return
-
-    [ $status -eq 1 ] && rm -v $dstdir
-
     # recursive identifier
     echo -e "--------\n$dotdir\n--------"
 
@@ -327,15 +318,15 @@ for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | ta
 done
 
 # host user based dotfies deploy
-[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
+[ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
     dodeploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
 
 # host based dotfies deploy
-[ -e $DOTSREPO/__HOST.$HOST ] && \
+[ -d $DOTSREPO/__HOST.$HOST ] && \
     dodeploy $DOTSREPO/__HOST.$HOST $DESTHOME
 
 # user based dotfies deploy
-[ -e $DOTSREPO/__USER.$USER ] && \
+[ -d $DOTSREPO/__USER.$USER ] && \
     dodeploy $DOTSREPO/__USER.$USER $DESTHOME
 
 dodeploy $DOTSREPO $DESTHOME
