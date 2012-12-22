@@ -219,6 +219,10 @@ dosymlink() {
 
     # for nested path, need to mkdir parent first
     [ -n "$repath" ] && {
+        # backup if the target already exits
+        [ -f "$DESTHOME/$repath" ] && {
+            mkdir -vp $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath")
+        }
         mkdir -vp $DESTHOME/$repath
     }
 
