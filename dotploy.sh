@@ -264,32 +264,37 @@ directory will be used.
 EOF
 }
 
-while getopts ":pdh" optname
+declare -a args
+while [ $# -gt 0 ]
 do
-    case "$optname" in
-        "p")
+    case "$1" in
+        -p )
             echo "Option '-p' has been depreciated"
             show_help
             exit 1
         ;;
-        "d")
+        -d )
             echo "Option '-d' has been depreciated"
             show_help
             exit 1
         ;;
-        "h")
+        -h | --help )
             show_help
             exit 0
         ;;
-        "?")
-            echo "ERROR: Unknown option $OPTARG"
+        -* )
+            echo "ERROR: Unknown option $1"
             show_help
             exit 1
         ;;
+        * )
+            args+=("$1")
+        ;;
     esac
+    shift
 done
 
-shift $((OPTIND - 1))
+set -- "${args[@]}"
 
 DOTSHOME=$(realpath $1)
 DOTSREPO=$DOTSHOME/__DOTDIR
