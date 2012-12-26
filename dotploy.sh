@@ -275,8 +275,16 @@ Usage:
 
     dotploy.sh <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
 
+    Options:
+
+        -h  show help information
+        -v  be verbose about the process
+
 The `<destination_of_the_deployment>` is optional. If absent, current `$HOME`
 directory will be used.
+
+Conflicted files will be backed up into `.dotploy/` directory under your
+deployment destination.
 
 EOF
 }
