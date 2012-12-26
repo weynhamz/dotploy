@@ -51,6 +51,10 @@ die() {
     exit "${2:-1}"
 }
 
+print() {
+    [ $VERBOSE -eq 1 ] && [ -n "$1" ] && echo "$1"
+}
+
 #
 # Function: doprune
 #
@@ -67,7 +71,8 @@ doprune() {
         docheck $file
 
         [ $? -eq 1 ] && {
-            rm -v $file
+            print $'UPDATE:\t'"$file"
+            print "$(rm -v $file)"
         }
     done
 }
@@ -99,8 +104,6 @@ docheck() {
     [ -e $DOTSREPO/__USER.$USER/$repath ] && src=$DOTSREPO/__USER.$USER/$repath
     [ -e $DOTSREPO/__HOST.$HOST/$repath ] && src=$DOTSREPO/__HOST.$HOST/$repath
     [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
-
-    echo "CHECKING: $dst"
 
     if [ -h $dst ];then
         local csrc=$(readlink -fm $dst)
@@ -142,9 +145,6 @@ dodeploy() {
     local dotdir=$1
     local dstdir=$2
 
-    # recursive identifier
-    echo -e "--------\n$dotdir\n--------"
-
     local filelist=$(ls -1A --color=none $dotdir)
 
     local file
@@ -168,8 +168,6 @@ dodeploy() {
                 # this directory needs to be kept,
                 # deploy its contents.
                 dodeploy $dotdir/$file $dstdir/$file
-                # recursive identifier
-                echo -e "--------\n$dotdir\n--------"
             else
                 dosymlink $dotdir $dstdir $file
             fi
@@ -212,9 +210,11 @@ dosymlink() {
     [ -n "$repath" ] && {
         # backup if the target already exits
         [ -f "$DESTHOME/$repath" ] && {
-            mkdir -vp $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath")
+            print $'BACKUP:\t'"$DESTHOME/$repath"
+            print "$(mkdir -vp $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
         }
-        mkdir -vp $DESTHOME/$repath
+        print $'MKDIR:\t'"$DESTHOME/$repath"
+        print "$(mkdir -vp $DESTHOME/$repath)"
     }
 
     docheck $dst
@@ -223,19 +223,20 @@ dosymlink() {
 
     # remove broken link
     [ $status -eq 1 ] && {
-        rm -v $dst
+        print $'REMOVE:\t'"$dst"
+        print "$(rm -v $dst)"
     }
 
     # backup existed file
     [ $status -eq 2 ] && {
-        echo -en "BACKUP:\t"
-        mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath
+        print $'BACKUP:\t'"$dst"
+        print "$(mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
     }
 
     # symlink the file in the repo
     [ $status -ne 0 ] && [ $status -ne 4 ] && {
-        echo -en "SYMLINK:\t"
-        ln -v -s $src $dst
+        print $'SYMLINK:\t'"$dst"
+        print "$(ln -v -s $src $dst)"
     }
 }
 
@@ -265,6 +266,8 @@ EOF
 }
 
 declare -a args
+declare -i DEPTH=0
+declare -i VERBOSE=0
 while [ $# -gt 0 ]
 do
     case "$1" in
@@ -277,6 +280,9 @@ do
             echo "Option '-d' has been depreciated"
             show_help
             exit 1
+        ;;
+        -v | --verbose )
+            VERBOSE=1
         ;;
         -h | --help )
             show_help
@@ -310,7 +316,10 @@ DESTHOME=$(realpath ${2:-$HOME})
 # backup location, categarized by date
 BAKPATH=$DOTSHOME/__BACKUP/$HOST/`date +%Y%m%d.%H.%M.%S`
 
-mkdir -vp $BAKPATH || exit 1
+{
+    print $'MKDIR:\t'"$BAKPATH"
+    print $(mkdir -p -v $BAKPATH)
+} || exit 1
 
 # used to identify where our backup came from
 echo $DESTHOME > $BAKPATH/DESTHOME
