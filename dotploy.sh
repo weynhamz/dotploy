@@ -329,28 +329,48 @@ DESTHOME=$(realpath ${2:-$HOME})
 # make sure our destination is there
 [ -d $DESTHOME ] || die "$DESTHOME is not available"
 
+CONFDIR=$DESTHOME/.dotploy
+
+mkdir -p $CONFDIR || exit 1
+
 # backup location, categarized by date
-BAKPATH=$DOTSHOME/__BACKUP/$HOST/`date +%Y%m%d.%H.%M.%S`
-
-{
-    print $'MKDIR:\t'"$BAKPATH"
-    print $(mkdir -p -v $BAKPATH)
-} || exit 1
-
-# used to identify where our backup came from
-echo $DESTHOME > $BAKPATH/DESTHOME
+BAKPATH=$CONFDIR/backup/`date +%Y%m%d.%H.%M.%S`
 
 # keep a record of the deployed files
-LOGFILE=$BAKPATH/dotploy.log
+LOGFILE=$CONFDIR/filelog
 
-touch $LOGFILE
+# transform old backup sctruction to the new one
+[ -d $DOTSHOME/__BACKUP/$HOST ] && {
+    echo "Performing transition ..."
 
-# remove the broken symlinks since last deployment first
-for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
-    [ "$logpath" = "$BAKPATH" ] && continue
+    [ -f $LOGFILE ] && mv $LOGFILE $LOGFILE.bak
+    for bakpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | sed 's-/DESTHOME$--g');do
+        mv $bakpath/dotploy.log $LOGFILE &>/dev/null
 
-    [ -f $logpath/dotploy.log ] && doprune $logpath/dotploy.log
-done
+        [ -f $bakpath/dotploy.log ] && {
+            echo error
+            continue
+        }
+
+        rm $bakpath/DESTHOME &>/dev/null
+
+        [ -f $bakpath/DESTHOME ] && {
+            echo error
+            continue
+        }
+
+        rmdir $bakpath &> /dev/null || mv $bakpath $CONFDIR/backup
+    done
+    [ -f $LOGFILE.bak ] && mv $LOGFILE.bak $LOGFILE
+
+    rmdir --ignore-fail-on-non-empty -p $DOTSHOME/__BACKUP/$HOST
+
+    echo "Transition done."
+}
+
+if [ -f $LOGFILE ];then
+    doprune $LOGFILE
+fi
 
 # host user based dotfies deploy
 [ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
