@@ -52,7 +52,7 @@ die() {
 }
 
 print() {
-    [ $VERBOSE -eq 1 ] && [ -n "$1" ] && echo "$1"
+    [ $VERBOSE -eq 1 ] && [ -n "$1" ] && echo "$1" | sed "s/^/$(printf '|%.0s' $(seq 1 $DEPTH))\t/g"
 }
 
 #
@@ -145,6 +145,9 @@ dodeploy() {
     local dotdir=$1
     local dstdir=$2
 
+    DEPTH=$(( $DEPTH + 1 ))
+    print $'ENTER:\t'"$dotdir"
+
     local filelist=$(ls -1A --color=none $dotdir)
 
     local file
@@ -179,6 +182,9 @@ dodeploy() {
 
         [ $? -ne 0 ] && echo "$dstdir/$file" >> $LOGFILE
     done
+
+    print $'LEAVE:\t'"$dotdir"
+    DEPTH=$(( $DEPTH - 1 ))
 }
 
 #
@@ -211,10 +217,14 @@ dosymlink() {
         # backup if the target already exits
         [ -f "$DESTHOME/$repath" ] && {
             print $'BACKUP:\t'"$DESTHOME/$repath"
+            DEPTH=$(( $DEPTH + 1 ))
             print "$(mkdir -vp $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
+            DEPTH=$(( $DEPTH - 1 ))
         }
         print $'MKDIR:\t'"$DESTHOME/$repath"
+        DEPTH=$(( $DEPTH + 1 ))
         print "$(mkdir -vp $DESTHOME/$repath)"
+        DEPTH=$(( $DEPTH - 1 ))
     }
 
     docheck $dst
@@ -224,19 +234,25 @@ dosymlink() {
     # remove broken link
     [ $status -eq 1 ] && {
         print $'REMOVE:\t'"$dst"
+        DEPTH=$(( $DEPTH + 1 ))
         print "$(rm -v $dst)"
+        DEPTH=$(( $DEPTH - 1 ))
     }
 
     # backup existed file
     [ $status -eq 2 ] && {
         print $'BACKUP:\t'"$dst"
+        DEPTH=$(( $DEPTH + 1 ))
         print "$(mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
+        DEPTH=$(( $DEPTH - 1 ))
     }
 
     # symlink the file in the repo
     [ $status -ne 0 ] && [ $status -ne 4 ] && {
         print $'SYMLINK:\t'"$dst"
+        DEPTH=$(( $DEPTH + 1 ))
         print "$(ln -v -s $src $dst)"
+        DEPTH=$(( $DEPTH - 1 ))
     }
 }
 
