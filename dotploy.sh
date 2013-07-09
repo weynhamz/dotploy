@@ -22,76 +22,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-##################################################################################
+#################################################################################
 
 IFS=$'\n'
-
-PRUNE=0
-DEPLOY=0
-
-HELP=$(cat << 'EOF'
-
-This script was designed for ease of the dot files deployment under $HOME
-directory for mutiple users on several hosts.
-
-Some common dot files are shared by different users and hosts. Host specific
-dot files can be placed under __HOST.$HOSTNAME directory, user specific dot
-files can be placed under __USER.$USER or __HOST.$HOSTNAME/__USER.$USRE
-direcotry. The deeper nested file with same name has a higher priority.
-
-Developed and distributed under GPLv2 or later version.
-
-Usage:
-
-    dotploy.sh [-d] <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
-    dotploy.sh [-p] <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
-
-Options:
-
-    -d  deploy dotfiles
-    -p  prune broken symlinks
-
-The <destination_of_the_deployment> is optional. If it is absent, current
-$HOME will be used.
-EOF
-)
-
-while getopts ":pdh" optname
-do
-    case "$optname" in
-        "p")
-            PRUNE=1
-            ;;
-        "d")
-            PRUNE=1
-            DEPLOY=1
-            ;;
-        "h")
-            echo "$HELP"
-            exit 0
-            ;;
-        "?")
-            echo "ERROR: Unknown option $OPTARG"
-            echo "$HELP"
-            exit 1
-            ;;
-    esac
-done
-
-shift $((OPTIND - 1))
 
 # get real user name
 USER=$(id -nu)
 
-DOTSHOME=$(realpath $1)
-DOTSREPO=$DOTSHOME/__DOTDIR
-[ -n "$2" ] && DESTHOME=$(realpath $2) || DESTHOME=$HOME
+[[ -z $USER ]] && die "Unkown user"
 
-# die if it is not a dotsrepo
-[ -d $DOTSHOME ] && [ -d $DOTSREPO ] || exit 1
+# get current host name
+HOST=$HOSTNAME
 
-# backup location, categarized by date
-BACKUP=$DOTSHOME/__BACKUP/$HOSTNAME/`date +%Y%m%d.%H.%M.%S`
+[[ -z $HOST ]] && die "Unkown host"
 
 # preserved files
 IGNORE=(
@@ -103,14 +46,22 @@ IGNORE=(
     ".swp$"
 )
 
+die() {
+    echo "$1"
+    exit "${2:-1}"
+}
+
+print() {
+    [ $VERBOSE -eq 1 ] && [ -n "$1" ] && echo "$1" | sed "s/^/$(printf '|%.0s' $(seq 1 $DEPTH))\t/g"
+}
+
 #
 # Function: doprune
 #
-# Remove broken symlink according to the last dotploy.log
+# Remove broken symlinks
 #
 # Parameters:
-#   $1  dotploy log file
-#
+#   $1  log file recorded the deployed symlinks
 #
 doprune() {
     local logfile=$1
@@ -119,21 +70,27 @@ doprune() {
     for file in $(cat $logfile); do
         docheck $file
 
-        [ $? -eq 1 ] && rm -v $file
-
-        [ $DEPLOY -ne 1 ] && [ -e $file ] && echo $file >> $BACKUP/dotploy.log
+        [ $? -eq 1 ] && {
+            print $'UPDATE:\t'"$file"
+            print "$(rm -v $file)"
+        }
     done
 }
 
 #
 # Function: docheck
 #
-# Check file status.
+# Check the status of a given file
 #
 # Parameters:
-#   $1  source directory where dotfiles located
-#   $2  destination directory of the dotfiles
-#   $3  filename of the dotfile
+#   $1  target file to be checked
+#
+# Return Value:
+#   0 all good
+#   1 need update
+#   2 need backup
+#   3 not existed, do link
+#   4 do nothing, deploy its contents
 #
 docheck() {
     local src
@@ -145,37 +102,30 @@ docheck() {
 
     [ -e $DOTSREPO/$repath ] && src=$DOTSREPO/$repath
     [ -e $DOTSREPO/__USER.$USER/$repath ] && src=$DOTSREPO/__USER.$USER/$repath
-    [ -e $DOTSREPO/__HOST.$HOSTNAME/$repath ] && src=$DOTSREPO/__HOST.$HOSTNAME/$repath
-    [ -e $DOTSREPO/__HOST.$HOSTNAME/__USER.$USER/$repath ] && src=$DOTSREPO/__HOST.$HOSTNAME/__USER.$USER/$repath
-
-    echo "CHECKING: $dst"
+    [ -e $DOTSREPO/__HOST.$HOST/$repath ] && src=$DOTSREPO/__HOST.$HOST/$repath
+    [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
 
     if [ -h $dst ];then
         local csrc=$(readlink -fm $dst)
 
-        if [[ $csrc =~ $DOTSHOME ]];then #whether link to dotsrepo
+        if [[ $csrc =~ $DOTSHOME ]];then
             if [ "$csrc" == "$src" ];then
-                #all good
                 return 0
             else
-                #need update
                 return 1
             fi
         else
-            #need backup
             return 2
         fi
     elif [ -d $dst ];then
-        [ -f $src/__KEEPED ] && \
-            #if dst is a dir,should check whether it contains high lever files
-            return 4 || \
-            #need backup
+        if [ -f $src/__KEEPED ];then
+            return 4
+        else
             return 2
+        fi
     elif [ -f $dst ];then
-        #need backup
         return 2
     else
-        #not existed, do link
         return 3
     fi
 }
@@ -186,38 +136,17 @@ docheck() {
 # Deploy files
 #
 # Parameters:
-#   $1  directory containing files to be deployed
+#   $1  directory containing dot files
 #   $2  directory where files need to go
 #
-# This function can be recursive called.
+# This function can be called recursively.
 #
 dodeploy() {
     local dotdir=$1
     local dstdir=$2
 
-    # need to check the src,make sure it is a direcotry
-    docheck $dstdir
-
-    local status=$?
-
-    [ $status -eq 0 ] && return
-
-    [ $status -eq 1 ] && rm -v $dstdir
-
-    # host user based dotfies deploy
-    [ -e $dotdir/__HOST.$HOSTNAME/__USER.$USER ] && \
-        dodeploy $dotdir/__HOST.$HOSTNAME/__USER.$USER $dstdir
-
-    # host based dotfies deploy
-    [ -e $dotdir/__HOST.$HOSTNAME ] && \
-        dodeploy $dotdir/__HOST.$HOSTNAME $dstdir
-
-    # user based dotfies deploy
-    [ -e $dotdir/__USER.$USER ] && \
-        dodeploy $dotdir/__USER.$USER $dstdir
-
-    # recursive identifier
-    echo -e "--------\n$dotdir\n--------"
+    DEPTH=$(( $DEPTH + 1 ))
+    print $'ENTER:\t'"$dotdir"
 
     local filelist=$(ls -1A --color=none $dotdir)
 
@@ -228,7 +157,10 @@ dodeploy() {
         for line in ${IGNORE[@]};do
             [[ $file =~ $line ]] && continue 2
         done
+
+        # apply user-defined ignoring rules
         if [ -f $dotdir/__IGNORE ]; then
+            local line
             for line in $(cat $dotdir/__IGNORE);do
                 [[ $file =~ $line ]] && continue 2
             done
@@ -236,11 +168,9 @@ dodeploy() {
 
         if [ -d $dotdir/$file ]; then
             if [ -e $dotdir/$file/__KEEPED ];then
-                # this is a directory needed to be keeped,
-                # deploy its content.
+                # this directory needs to be kept,
+                # deploy its contents.
                 dodeploy $dotdir/$file $dstdir/$file
-                # recursive identifier
-                echo -e "--------\n$dotdir\n--------"
             else
                 dosymlink $dotdir $dstdir $file
             fi
@@ -248,21 +178,25 @@ dodeploy() {
             dosymlink $dotdir $dstdir $file
         fi
 
-        grep "^$dstdir/$file\$" $BACKUP/dotploy.log >/dev/null 2>&1
+        grep "^$dstdir/$file\$" $LOGFILE >/dev/null 2>&1
 
-        [ $? -ne 0 ] && echo "$dstdir/$file" >> $BACKUP/dotploy.log
+        [ $? -ne 0 ] && echo "$dstdir/$file" >> $LOGFILE
     done
+
+    print $'LEAVE:\t'"$dotdir"
+    DEPTH=$(( $DEPTH - 1 ))
 }
 
 #
 # Function: dosymlink
 #
-# Make symlink.
-# If destination file existed, backup first.
+# Make a symlink.
+#
+# If the target file exists, backup it first.
 #
 # Parameters:
-#   $1  source directory where dotfiles located
-#   $2  destination directory of the dotfiles
+#   $1  source directory where the dotfile is located
+#   $2  target directory where the dotfile will be deployed
 #   $3  filename of the dotfile
 #
 dosymlink() {
@@ -273,48 +207,190 @@ dosymlink() {
 
     repath=${1#$DOTSREPO}
     repath=${repath#/}
-    repath=${repath#__HOST.$HOSTNAME}
+    repath=${repath#__HOST.$HOST}
     repath=${repath#/}
     repath=${repath#__USER.$USER}
     repath=${repath#/}
 
     # for nested path, need to mkdir parent first
-    [ -n "$repath" ] && mkdir -vp $DESTHOME/$repath
+    [ -n "$repath" ] && {
+        # backup if the target already exits
+        [ -f "$DESTHOME/$repath" ] && {
+            print $'BACKUP:\t'"$DESTHOME/$repath"
+            DEPTH=$(( $DEPTH + 1 ))
+            print "$(mkdir -vp $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
+            DEPTH=$(( $DEPTH - 1 ))
+        }
+        print $'MKDIR:\t'"$DESTHOME/$repath"
+        DEPTH=$(( $DEPTH + 1 ))
+        print "$(mkdir -vp $DESTHOME/$repath)"
+        DEPTH=$(( $DEPTH - 1 ))
+    }
 
     docheck $dst
 
     local status=$?
 
-    [ $status -eq 1 ] && \
-        rm -v $dst
+    # remove broken link
+    [ $status -eq 1 ] && {
+        print $'REMOVE:\t'"$dst"
+        DEPTH=$(( $DEPTH + 1 ))
+        print "$(rm -v $dst)"
+        DEPTH=$(( $DEPTH - 1 ))
+    }
 
     # backup existed file
-    [ $status -eq 2 ] && \
-        echo -en "BACKUP:\t" && \
-        local backup=$BACKUP/$repath && \
-        mkdir -vp $backup && \
-        mv -v $dst $backup
+    [ $status -eq 2 ] && {
+        print $'BACKUP:\t'"$dst"
+        DEPTH=$(( $DEPTH + 1 ))
+        print "$(mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
+        DEPTH=$(( $DEPTH - 1 ))
+    }
 
-    # Symlink
-    [ $status -ne 0 ] && [ $status -ne 4 ] && \
-        echo -en "SYMLINK:\t" && \
-        ln -v -s $src $dst
+    # symlink the file in the repo
+    [ $status -ne 0 ] && [ $status -ne 4 ] && {
+        print $'SYMLINK:\t'"$dst"
+        DEPTH=$(( $DEPTH + 1 ))
+        print "$(ln -v -s $src $dst)"
+        DEPTH=$(( $DEPTH - 1 ))
+    }
 }
 
-mkdir -vp $BACKUP || exit 1
+show_help() {
+    cat << 'EOF'
 
-echo $DESTHOME > $BACKUP/DESTHOME
+This script is designed for ease of deploying the dot files under $HOME
+directory for mutiple users on several hosts.
 
-touch $BACKUP/dotploy.log
+Common dot files need to be shared with different users on different hosts
+could be placed in the root directory of the dots repo.  While host specific
+dot files could be placed under `__HOST.$HOSTNAME` directory, and user specific
+dot files be placed under `__USER.$USER` or `__HOST.$HOSTNAME/__USER.$USRE`
+direcotry. The file in the specified host or user directory with same name
+has higher priority.
 
-if [ $PRUNE -eq 1 ];then
-    for logpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOSTNAME/*/DESTHOME | tail -2 | sed 's-/DESTHOME$--g');do
-        [ "$logpath" = "$BACKUP" ] && continue
+This script is developed and distributed under GPLv2 or later version.
 
-        [ -f $logfile ] && doprune $logpath/dotploy.log
+Usage:
+
+    dotploy.sh <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+
+    Options:
+
+        -h  show help information
+        -v  be verbose about the process
+
+The `<destination_of_the_deployment>` is optional. If absent, current `$HOME`
+directory will be used.
+
+Conflicted files will be backed up into `.dotploy/` directory under your
+deployment destination.
+
+EOF
+}
+
+declare -a args
+declare -i DEPTH=0
+declare -i VERBOSE=0
+while [ $# -gt 0 ]
+do
+    case "$1" in
+        -p )
+            echo "Option '-p' has been depreciated"
+            show_help
+            exit 1
+        ;;
+        -d )
+            echo "Option '-d' has been depreciated"
+            show_help
+            exit 1
+        ;;
+        -v | --verbose )
+            VERBOSE=1
+        ;;
+        -h | --help )
+            show_help
+            exit 0
+        ;;
+        -* )
+            echo "ERROR: Unknown option $1"
+            show_help
+            exit 1
+        ;;
+        * )
+            args+=("$1")
+        ;;
+    esac
+    shift
+done
+
+set -- "${args[@]}"
+
+DOTSHOME=$(realpath $1)
+DOTSREPO=$DOTSHOME/__DOTDIR
+
+# die if it is not a dotsrepo
+[ -d $DOTSHOME ] && [ -d $DOTSREPO ] || die "$DOTSREPO is not available"
+
+DESTHOME=$(realpath ${2:-$HOME})
+
+# make sure our destination is there
+[ -d $DESTHOME ] || die "$DESTHOME is not available"
+
+CONFDIR=$DESTHOME/.dotploy
+
+mkdir -p $CONFDIR || exit 1
+
+# backup location, categarized by date
+BAKPATH=$CONFDIR/backup/`date +%Y%m%d.%H.%M.%S`
+
+# keep a record of the deployed files
+LOGFILE=$CONFDIR/filelog
+
+# transform old backup sctruction to the new one
+[ -d $DOTSHOME/__BACKUP/$HOST ] && {
+    echo "Performing transition ..."
+
+    [ -f $LOGFILE ] && mv $LOGFILE $LOGFILE.bak
+    for bakpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | sed 's-/DESTHOME$--g');do
+        mv $bakpath/dotploy.log $LOGFILE &>/dev/null
+
+        [ -f $bakpath/dotploy.log ] && {
+            echo error
+            continue
+        }
+
+        rm $bakpath/DESTHOME &>/dev/null
+
+        [ -f $bakpath/DESTHOME ] && {
+            echo error
+            continue
+        }
+
+        rmdir $bakpath &> /dev/null || mv $bakpath $CONFDIR/backup
     done
+    [ -f $LOGFILE.bak ] && mv $LOGFILE.bak $LOGFILE
+
+    rmdir --ignore-fail-on-non-empty -p $DOTSHOME/__BACKUP/$HOST
+
+    echo "Transition done."
+}
+
+if [ -f $LOGFILE ];then
+    doprune $LOGFILE
 fi
 
-if [ $DEPLOY -eq 1 ];then
-    dodeploy $DOTSREPO $DESTHOME
-fi
+# host user based dotfies deploy
+[ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
+    dodeploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
+
+# host based dotfies deploy
+[ -d $DOTSREPO/__HOST.$HOST ] && \
+    dodeploy $DOTSREPO/__HOST.$HOST $DESTHOME
+
+# user based dotfies deploy
+[ -d $DOTSREPO/__USER.$USER ] && \
+    dodeploy $DOTSREPO/__USER.$USER $DESTHOME
+
+# shared dotfiles deploy
+dodeploy $DOTSREPO $DESTHOME
