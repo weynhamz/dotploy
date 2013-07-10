@@ -259,29 +259,16 @@ dosymlink() {
 show_help() {
     cat << 'EOF'
 
-This script is designed for ease of deploying the dot files under $HOME
-directory for mutiple users on several hosts.
-
-Common dot files need to be shared with different users on different hosts
-could be placed in the root directory of the dots repo.  While host specific
-dot files could be placed under `__HOST.$HOSTNAME` directory, and user specific
-dot files be placed under `__USER.$USER` or `__HOST.$HOSTNAME/__USER.$USRE`
-direcotry. The file in the specified host or user directory with same name
-has higher priority.
-
-This script is developed and distributed under GPLv2 or later version.
-
 Usage:
 
     dotploy.sh <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
 
-    Options:
+Options:
 
-        -h  show help information
-        -v  be verbose about the process
-
-The `<destination_of_the_deployment>` is optional. If absent, current `$HOME`
-directory will be used.
+    -h, show help information
+    -v, be verbose about the process
+The argument `<destination_of_the_deployment>` is optional. If it is absent,
+then current `$HOME` directory will be used.
 
 Conflicted files will be backed up into `.dotploy/` directory under your
 deployment destination.
