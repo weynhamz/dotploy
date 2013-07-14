@@ -1,7 +1,5 @@
 #!/bin/bash
 
-[ -f ../../tests/bootstrap.sh ] && . ../../tests/bootstrap.sh
-
 USER=$(id -nu)
 HOST=$HOSTNAME
 
@@ -59,11 +57,7 @@ __test_layer=(
     "__UNUSED/"
 )
 
-if [ -n "$SHELL_TOOLKIT_TEST_FIELD" ]; then
-    __test_field=$SHELL_TOOLKIT_TEST_FIELD'/dotploy'
-else
-    __test_field=$(dirname $0)'/test-field'
-fi
+__test_field=$ABSPATH'/test-field'
 
 __test_dotsdest=$__test_field'/dotsdest'
 __test_dotsrepo=$__test_field'/dotsrepo'
