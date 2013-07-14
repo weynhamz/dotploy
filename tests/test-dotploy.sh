@@ -103,6 +103,8 @@ __test_dotsdest=$__test_field'/dotsdest'
 __test_dotsrepo=$__test_field'/dotsrepo'
 
 _set_up() {
+    export PATH=$(realpath $ABSPATH/..):$PATH
+
     mkdir -p $__test_dotsdest
     mkdir -p $__test_dotsrepo
     for layer in ${__test_layer[@]};do
@@ -116,5 +118,5 @@ _tear_down() {
 }
 
 _set_up
-$(dirname $0)/../dotploy.sh $__test_dotsrepo $__test_dotsdest
+dotploy.sh $__test_dotsrepo $__test_dotsdest
 _tear_down
