@@ -24,6 +24,52 @@
 #
 #################################################################################
 
+# Function: _abspath
+#
+#    Get the absolute path for a file
+#
+#    From: http://stackoverflow.com/questions/59895
+#
+_abspath() {
+    local path=${1:-$(caller | cut -d' ' -f2)}
+    local path_dir=$( dirname "$path" )
+    while [ -h "$path" ]
+    do
+        path=$(readlink "$path")
+        [[ $path != /* ]] && path=$path_dir/$path
+        path_dir=$( cd -P "$( dirname "$path"  )" && pwd )
+    done
+    path_dir=$( cd -P "$( dirname "$path" )" && pwd )
+    echo "$path_dir"
+}
+
+ABSPATH=$(_abspath)
+
+if [[ -f $ABSPATH/../../libs/bashLib/src/bashLib ]]
+then
+    source "$ABSPATH/../../libs/bashLib/src/bashLib"
+elif [[ -f $ABSPATH/bundles/bashLib/src/bashLib ]]
+then
+    source "$ABSPATH/bundles/bashLib/src/bashLib"
+elif [[ -f /usr/share/dotploy/bundles/bashLib/bashLib ]]
+then
+    source "/usr/share/dotploy/bundles/bashLib/bashLib"
+elif [[ -f /usr/share/lib/bashLib/bashLib ]]
+then
+    source "/usr/share/lib/bashLib/bashLib"
+else
+    echo "Can not find bashLib, you need to install it as bundles first."
+    exit 1
+fi
+
+###############################################################################
+#
+# Main Program
+#
+###############################################################################
+
+ABSPATH=$(_abspath)
+
 IFS=$'\n'
 
 # get real user name
@@ -45,11 +91,6 @@ IGNORE=(
     "^.git$"
     ".swp$"
 )
-
-die() {
-    echo "$1"
-    exit "${2:-1}"
-}
 
 print() {
     [ $VERBOSE -eq 1 ] && [ -n "$1" ] && echo "$1" | sed "s/^/$(printf '|%.0s' $(seq 1 $DEPTH))\t/g"

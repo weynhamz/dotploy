@@ -1,5 +1,45 @@
 #!/bin/bash
 
+# Function: _abspath
+#
+#    Get the absolute path for a file
+#
+#    From: http://stackoverflow.com/questions/59895
+#
+_abspath() {
+    local path=${1:-$(caller | cut -d' ' -f2)}
+    local path_dir=$( dirname "$path" )
+    while [ -h "$path" ]
+    do
+        path=$(readlink "$path")
+        [[ $path != /* ]] && path=$path_dir/$path
+        path_dir=$( cd -P "$( dirname "$path"  )" && pwd )
+    done
+    path_dir=$( cd -P "$( dirname "$path" )" && pwd )
+    echo "$path_dir"
+}
+
+ABSPATH=$(_abspath)
+
+if [[ -f $ABSPATH/../../../libs/bashTest/src/bashTest ]]
+then
+    source "$ABSPATH/../../../libs/bashTest/src/bashTest"
+elif [[ -f $ABSPATH/../bundles/bashTest/src/bashTest ]]
+then
+    source "$ABSPATH/../bundles/bashTest/src/bashTest"
+elif [[ -f /usr/share/dotploy/bundles/bashTest/bashTest ]]
+then
+    source "/usr/share/dotploy/bundles/bashTest/bashTest"
+elif [[ -f /usr/share/lib/bashTest/bashTest ]]
+then
+    source "/usr/share/lib/bashTest/bashTest"
+else
+    echo "Can not find bashTest, you need to install it as bundles first."
+    exit 1
+fi
+
+ABSPATH=$(_abspath)
+
 USER=$(id -nu)
 HOST=$HOSTNAME
 
@@ -61,14 +101,6 @@ __test_field=$ABSPATH'/test-field'
 
 __test_dotsdest=$__test_field'/dotsdest'
 __test_dotsrepo=$__test_field'/dotsrepo'
-
-_basedir() {
-    if [[ $1 =~ .*\/$ ]]; then
-        echo $1
-    else
-        dirname $1
-    fi
-}
 
 _set_up() {
     mkdir -p $__test_dotsdest
