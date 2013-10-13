@@ -435,10 +435,10 @@ dosymlink() {
     [[ $3 =~ ^.*.__SRC$ ]] && {
         ensure_source "$1/$3" || return
         src=$(get_filepath "$1/$3")
-        dst=$2/${3%%.__SRC}
+        dst=${2%%/}/${3%%.__SRC}
     } || {
-        src=$1/$3
-        dst=$2/$3
+        src=${1%%/}/$3
+        dst=${2%%/}/$3
     }
 
     local repath
