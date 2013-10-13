@@ -96,6 +96,169 @@ print() {
     [ $VERBOSE -eq 1 ] && [ -n "$1" ] && echo "$1" | sed "s/^/$(printf '|%.0s' $(seq 1 $DEPTH))\t/g"
 }
 
+printe() {
+    [ -n "$1" ] && echo "ERROR: $1" >&2
+}
+
+printw() {
+    [ -n "$1" ] && echo "Warning: $1" >&2
+}
+
+# extract the URL from a source entry
+get_url() {
+    # strip an eventual filename
+    printf "%s\n" "${1#*::}"
+}
+
+# extract the protocol from a source entry - return "local" for local sources
+get_protocol() {
+    if [[ $1 = *://* ]]; then
+        # strip leading filename
+        local proto="${1##*::}"
+        printf "%s\n" "${proto%%://*}"
+    else
+        printf "%s\n" local
+    fi
+}
+
+# extract the filename from a source entry
+get_filename() {
+    local src=$1
+
+    # if a filename is specified, use it
+    if [[ $src = *::* ]]; then
+        printf "%s\n" ${src%%::*}
+        return
+    fi
+
+    local proto=$(get_protocol "$src")
+    case $proto in
+        git*)
+            filename=${src%%#*}
+            filename=${filename%/}
+            filename=${filename##*/}
+            if [[ $proto = git* ]]; then
+                filename=${filename%%.git*}
+            fi
+            ;;
+        *)
+            # if it is just an URL, we only keep the last component
+            filename="${src##*/}"
+            ;;
+    esac
+    printf "%s\n" "${filename}"
+}
+
+# Return the absolute filename of a source entry
+get_filepath() {
+    local src=$1
+
+    local proto=$(get_protocol "$src")
+    case "$proto" in
+        git*)
+            echo $CONFDIR/vcs/$(get_filename "$src")
+            ;;
+        local)
+            echo $(get_url "$src")
+            ;;
+    esac
+}
+
+ensure_source() {
+    local src=$1
+
+    local proto=$(get_protocol "$src")
+    case "$proto" in
+        git*)
+            ensure_source_git "$src"
+            ;;
+        local)
+            ensure_source_local "$src"
+            ;;
+        *)
+            printe "Unkown protocol $proto ..."
+            exit 1
+            ;;
+    esac
+}
+
+ensure_source_git() (
+    local src=$1
+
+    mkdir -p $CONFDIR/vcs/
+
+    local dir=$CONFDIR/vcs/$(get_filename "$src")
+    local url=$(get_url "$src")
+    url=${url##*git+}
+    url=${url##*file:\/\/}
+    url=${url%%#*}
+
+    if [[ ! -d "$dir" ]] || _is_dir_empty "$dir" ; then
+        if ! git clone "$url" "$dir" &>/dev/null; then
+            printe "Failed to clone repository $url ..."
+            exit 1
+        fi
+    else
+        _cd "$dir"
+
+        # Make sure we are fetching the right repo
+        if [[ "$url" != "$(git config --get remote.origin.url)" ]] ; then
+            printw "We are not in right repo, backup the existed repo to $BAKPATH"
+            _cd ..
+            mkdir -p $BAKPATH && mv $dir $BAKPATH
+            if ! git clone "$url" "$dir" &>/dev/null; then
+                printe "Failed to clone repository $url ..."
+                exit 1
+            fi
+        else
+            if ! git fetch --all --prune; then
+                printw "Failed to fetch upstream ..."
+            else
+                #keep the head in sync
+                git fetch origin HEAD
+                echo "$(git rev-parse FETCH_HEAD)" > HEAD
+            fi
+        fi
+    fi
+
+    _cd "$dir"
+
+    local fragment=${src#*#}
+    if [[ $fragment = "$src" ]]; then
+        unset fragment
+    fi
+
+    local ref
+    if [[ -n $fragment ]]; then
+        case ${fragment%%=*} in
+            commit|tag)
+                ref=${fragment##*=}
+                ;;
+            branch)
+                ref=${fragment##*=}
+                ;;
+            *)
+                printw "Unrecognized reference: ${fragment}"
+        esac
+    fi
+
+    if [[ -n $ref ]]; then
+        if ! git checkout $ref &>/dev/null; then
+            printw "Unable to checkout the requested reference"
+        fi
+    fi
+)
+
+ensure_source_local() (
+    local src=$1
+    local url=$(get_url "$src")
+
+    [ -e $url ] || {
+        printe "Target $url does not exist"
+        exit 1
+    }
+)
+
 #
 # Function: doprune
 #
@@ -149,14 +312,14 @@ docheck() {
     if [ -h $dst ];then
         local csrc=$(readlink -fm $dst)
 
-        if [[ $csrc =~ $DOTSHOME ]];then
-            if [ "$csrc" == "$src" ];then
-                return 0
-            else
-                return 1
-            fi
+        if [ "$csrc" == "$src" ];then
+            return 0
         else
-            return 2
+            if [[ $csrc =~ $DOTSHOME ]];then
+                return 1
+            else
+                return 2
+            fi
         fi
     elif [ -d $dst ];then
         if [ -f $src/__KEEPED ];then
@@ -241,8 +404,17 @@ dodeploy() {
 #   $3  filename of the dotfile
 #
 dosymlink() {
-    local src=$1/$3
-    local dst=$2/$3
+    local src
+    local dst
+
+    [[ $3 =~ ^.*.__SRC$ ]] && {
+        ensure_source "$(head -1 $1/$3)" || return
+        src=$(get_filepath "$(head -1 $1/$3)")
+        dst=$2/${3%%.__SRC}
+    } || {
+        src=$1/$3
+        dst=$2/$3
+    }
 
     local repath
 

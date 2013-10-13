@@ -73,6 +73,64 @@ _make_layer() {
 
 ###############################################################################
 #
+# Git Wrappers
+#
+###############################################################################
+
+_git_tag() (
+    exec &>/dev/null
+    cd test.git
+
+    git tag "$@"
+)
+
+_git_init() (
+    exec &>/dev/null
+    cd test.git
+
+    git init "$@"
+)
+
+_git_commit() (
+    file=${1:?not set}
+    data=${2:?not set}
+    info=${3:?not set}
+
+    exec &>/dev/null
+    cd test.git
+
+    touch $file
+    echo "$data" >> $file
+
+    git add $file
+    git commit -m "$info"
+)
+
+_git_checkout() (
+    exec &>/dev/null
+    cd test.git
+
+    git checkout "$@"
+)
+
+_git_set_up() (
+    mkdir -p "test.git"
+    _git_init
+    _git_commit 1 1 1
+    _git_commit 2 2 2
+    _git_tag v0.1
+    _git_commit 3 3 3
+    _git_checkout -b develop
+    _git_commit 4 4 4
+    _git_checkout master
+)
+
+_git_tear_down() {
+    rm -rf "test.git"
+}
+
+###############################################################################
+#
 # Actual Tests
 #
 ###############################################################################
@@ -516,6 +574,123 @@ _test_run "Use __IGNORE ignore directory contains __KEEPED" '
     _test_expect_missing "dotsdest/.dotdir2"
     _test_expect_missing "dotsdest/.dotdir3"
     _test_expect_missing "dotsdest/.dotdir4"
+'
+
+_test_run "Local file/directory deploy" '
+    repo_layer=(
+        "normaldir"
+        "normalfile"
+        "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "$TEST_FIELD/normaldir" >> "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+    echo "$TEST_FIELD/normalfile" >> "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+    dotploy.sh "dotsrepo" "dotsdest"
+    _test_expect_symlink "dotsdest/.dotfile1" "$TEST_FIELD/normaldir"
+    _test_expect_symlink "dotsdest/.dotfile2" "$TEST_FIELD/normalfile"
+    rm -rf $TEST_FIELD/normaldir
+    rm -rf $TEST_FIELD/normalfile
+'
+
+_test_run "Local file/directory deploy with target missing" '
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "$TEST_FIELD/normaldir" > "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+    echo "$TEST_FIELD/normalfile" > "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+    output=$(dotploy.sh "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "ERROR: Target $TEST_FIELD/normaldir does not exist"
+    _test_expect_missing "dotsdest/.dotfile1"
+    _test_expect_match "$output" "ERROR: Target $TEST_FIELD/normalfile does not exist"
+    _test_expect_missing "dotsdest/.dotfile2"
+'
+
+_test_run "Remote git repository deploy" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    dotploy.sh "dotsrepo" "dotsdest"
+    _test_expect_symlink "dotsdest/.dotfile" "dotsdest/.dotploy/vcs/test"
+    _git_tear_down
+'
+
+_test_run "Remote git repository deploy with wrong repo url" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test1.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    output=$(dotploy.sh "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "ERROR: Failed to clone repository $TEST_FIELD/test1.git ..."
+    _test_expect_missing "dotsdest/.dotfile"
+    _git_tear_down
+'
+
+_test_run "Remote git repository deploy with a wrong existing repo" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    (
+        mkdir -p dotsdest/.dotploy/vcs/
+        cd dotsdest/.dotploy/vcs/
+        git clone $TEST_FIELD/test.git >/dev/null
+        cd test
+        git remote set-url --add origin $TEST_FIELD/test1.git
+    )
+    output=$(dotploy.sh "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    bakdir=dotsdest/.dotploy/backup/$(ls -1 --color=none dotsdest/.dotploy/backup)
+    _test_expect_match "$output" "Warning: We are not in right repo, backup the existed repo to $TEST_FIELD/$bakdir"
+    _test_expect_directory $bakdir/test
+    _git_tear_down
+'
+
+_test_run "Remote git repository deploy with an existing repo" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    (
+        mkdir -p dotsdest/.dotploy/vcs/
+        cd dotsdest/.dotploy/vcs/
+        git clone $TEST_FIELD/test.git >/dev/null
+    )
+    rm -rf $TEST_FIELD/test.git
+    output=$(dotploy.sh "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "Failed to fetch upstream ..."
+    _git_tear_down
+'
+
+_test_run "Remote git repository deploy with reference specified" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile3.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "test1::git+file://$TEST_FIELD/test.git#tag=v0.1" > "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+    echo "test2::git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+    echo "test3::git+file://$TEST_FIELD/test.git#commit=$(cd test.git;git rev-parse --short v0.1~)" > "dotsrepo/__DOTDIR/.dotfile3.__SRC"
+    dotploy.sh "dotsrepo" "dotsdest"
+    _test_expect_symlink "dotsdest/.dotfile1" "dotsdest/.dotploy/vcs/test1"
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test1;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short v0.1)"
+    _test_expect_symlink "dotsdest/.dotfile2" "dotsdest/.dotploy/vcs/test2"
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test2;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+    _test_expect_symlink "dotsdest/.dotfile3" "dotsdest/.dotploy/vcs/test3"
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test3;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short v0.1~)"
+    _git_tear_down
 '
 
 _test_done

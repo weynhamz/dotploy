@@ -11,6 +11,41 @@ could be placed under `__USER.$USER` or `__HOST.$HOSTNAME/__USER.$USRE`
 direcotry. The file in the specified host or user directory with same name has
 higher priority.
 
+It is also possible to deploy from other places or VCS sources(currently, only
+Git is supported). If a file in the dots repo has suffix `.__SRC`, it will be
+recognized as a record file which holds the URL to the real target. The URL is
+formed by three components as `folder::url#fragment`, and each component is
+explained as following:
+
+    folder:: (optional)
+        Specifies an alternate folder name for downloading the VCS source into.
+        If absent, dotploy will try to use the best name, usually the repo's
+        name or the directory name of the repo extracted from URL string.
+
+    url
+        The URL to the VCS repository. The VCS name must be included in the URL
+        protocol in order to let dotploy recognize this as a VCS source. If the
+        protocol does not contain the VCS name, it can be added by prefixing
+        the URL with vcs+. For example, using a Git repository over HTTPS would
+        have a source URL in the form: `git+https://....`
+
+    #fragment (optional)
+        Allows specifying tag/branch/revision to checkout from the VCS.
+
+        For example, to checkout a given revision, the format would be
+        `url#revision=123`.
+
+        The available fragments depends on the VCS being used.
+
+        For Git:
+
+            tag - Git tag to checkout
+            branch - Git branch to checkout
+            commit - Git commit to checkout
+
+The VCS source will be downloaded to `.dotploy/vcs` under your deploymet
+destination.
+
 Developed and distributed under GPLv2 or later version.
 
 How To Use it?
@@ -46,6 +81,10 @@ original location.
         |        but might be needed someday.
         |
         |--------__DOTDIR
+        |       |
+        |       |--------.dotfile.__SRC
+        |       |        ^^^^^^^^^^^^^^
+        |       |        Deploy from the location decribed in this file.
         |       |
         |       |--------.dotdir1
         |       |       |
