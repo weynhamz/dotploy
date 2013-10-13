@@ -165,15 +165,46 @@ get_filename() {
 get_filepath() {
     local src=$(get_src "$1")
 
+    local file=$(get_fragment "$src"  "file")
     local proto=$(get_protocol "$src")
     case "$proto" in
         git*)
-            echo $(get_dir "$1")
+            if [[ -n $file ]]; then
+                echo $(get_dir "$1")/$file
+            else
+                echo $(get_dir "$1")
+            fi
             ;;
         local)
             echo $(get_url "$src")
             ;;
     esac
+}
+
+get_fragment() {
+    local url=$1
+    local target=$2
+    local fragment=${url#*#}
+
+    if [[ $fragment = "$url" ]]; then
+        return
+    fi
+
+    if [[ -n $fragment ]]; then
+        if [[ $target = ref ]]; then
+            if [[ $fragment =~ tag=* ]]; then
+                echo $fragment | sed 's/.*tag=\([^&]*\).*/\1/g'
+            elif [[ $fragment =~ commit=* ]]; then
+                echo $fragment | sed 's/.*commit=\([^&]*\).*/\1/g'
+            elif [[ $fragment =~ branch=* ]]; then
+                echo $fragment | sed 's/.*branch=\([^&]*\).*/\1/g'
+            fi
+        elif [[ $target = file ]]; then
+            if [[ $fragment =~ file=* ]]; then
+                echo $fragment | sed 's/.*file=\([^&]*\).*/\1/g'
+            fi
+        fi
+    fi
 }
 
 ensure_source() {
@@ -235,25 +266,7 @@ ensure_source_git() (
 
     _cd "$dir"
 
-    local fragment=${src#*#}
-    if [[ $fragment = "$src" ]]; then
-        unset fragment
-    fi
-
-    local ref
-    if [[ -n $fragment ]]; then
-        case ${fragment%%=*} in
-            commit|tag)
-                ref=${fragment##*=}
-                ;;
-            branch)
-                ref=${fragment##*=}
-                ;;
-            *)
-                printw "Unrecognized reference: ${fragment}"
-        esac
-    fi
-
+    local ref=$(get_fragment "$src"  "ref")
     if [[ -n $ref ]]; then
         if ! git checkout $ref &>/dev/null; then
             printw "Unable to checkout the requested reference"

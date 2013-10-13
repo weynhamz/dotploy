@@ -99,7 +99,12 @@ _git_commit() (
     exec &>/dev/null
     cd test.git
 
-    touch $file
+    [[ $1 =~ */ ]] && {
+        mkdir -p $file
+    } || {
+        mkdir -p $(dirname $file)
+        touch $file
+    }
     echo "$data" >> $file
 
     git add $file
@@ -674,15 +679,23 @@ _test_run "Remote git repository deploy with an existing repo" '
 
 _test_run "Remote git repository deploy with reference specified" '
     _git_set_up
+    _git_commit 5/6 6 6
+    _git_checkout develop
+    _git_commit 7/8 8 8
+    _git_checkout master
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile1.__SRC"
         "dotsrepo/__DOTDIR/.dotfile2.__SRC"
         "dotsrepo/__DOTDIR/.dotfile3.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile4.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile5.__SRC"
     )
     _make_layer "${repo_layer[@]}"
     echo "test1::git+file://$TEST_FIELD/test.git#tag=v0.1" > "dotsrepo/__DOTDIR/.dotfile1.__SRC"
     echo "test2::git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile2.__SRC"
     echo "test3::git+file://$TEST_FIELD/test.git#commit=$(cd test.git;git rev-parse --short v0.1~)" > "dotsrepo/__DOTDIR/.dotfile3.__SRC"
+    echo "test4::git+file://$TEST_FIELD/test.git#file=5/6" > "dotsrepo/__DOTDIR/.dotfile4.__SRC"
+    echo "test5::git+file://$TEST_FIELD/test.git#branch=develop&file=7/8" > "dotsrepo/__DOTDIR/.dotfile5.__SRC"
     dotploy.sh "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotfile1" "dotsdest/.dotploy/vcs/test1.dotfile1"
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test1.dotfile1;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short v0.1)"
@@ -690,6 +703,9 @@ _test_run "Remote git repository deploy with reference specified" '
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test2.dotfile2;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
     _test_expect_symlink "dotsdest/.dotfile3" "dotsdest/.dotploy/vcs/test3.dotfile3"
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test3.dotfile3;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short v0.1~)"
+    _test_expect_symlink "dotsdest/.dotfile4" "dotsdest/.dotploy/vcs/test4.dotfile4/5/6"
+    _test_expect_symlink "dotsdest/.dotfile5" "dotsdest/.dotploy/vcs/test5.dotfile5/7/8"
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test5.dotfile5;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
     _git_tear_down
 '
 

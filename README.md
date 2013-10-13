@@ -30,12 +30,17 @@ explained as following:
         have a source URL in the form: `git+https://....`
 
     #fragment (optional)
-        Allows specifying tag/branch/revision to checkout from the VCS.
+        Allows specifying tag/branch/revision to checkout from the VCS, or the
+        relative path of a file from the VCS to be linked to.
 
         For example, to checkout a given revision, the format would be
-        `url#revision=123`.
+        `url#revision=123&file=a/b/c`.
 
         The available fragments depends on the VCS being used.
+
+        Common:
+
+            file - relative path to a file in the VCS repository
 
         For Git:
 
