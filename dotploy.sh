@@ -104,6 +104,18 @@ printw() {
     [ -n "$1" ] && echo "Warning: $1" >&2
 }
 
+# Abtain the record to the source
+get_src() {
+    head -1 $1
+}
+
+# Directory to store the VCS source
+get_dir() {
+    mkdir -p $CONFDIR/vcs/
+
+    echo $CONFDIR/vcs/$(get_filename "$(get_src "$1")")$(basename "$1" | sed 's/.__SRC$//g')
+}
+
 # extract the URL from a source entry
 get_url() {
     # strip an eventual filename
@@ -151,12 +163,12 @@ get_filename() {
 
 # Return the absolute filename of a source entry
 get_filepath() {
-    local src=$1
+    local src=$(get_src "$1")
 
     local proto=$(get_protocol "$src")
     case "$proto" in
         git*)
-            echo $CONFDIR/vcs/$(get_filename "$src")
+            echo $(get_dir "$1")
             ;;
         local)
             echo $(get_url "$src")
@@ -165,15 +177,15 @@ get_filepath() {
 }
 
 ensure_source() {
-    local src=$1
+    local src=$(get_src "$1")
 
     local proto=$(get_protocol "$src")
     case "$proto" in
         git*)
-            ensure_source_git "$src"
+            ensure_source_git "$1"
             ;;
         local)
-            ensure_source_local "$src"
+            ensure_source_local "$1"
             ;;
         *)
             printe "Unkown protocol $proto ..."
@@ -183,11 +195,11 @@ ensure_source() {
 }
 
 ensure_source_git() (
-    local src=$1
+    local src=$(get_src "$1")
 
     mkdir -p $CONFDIR/vcs/
 
-    local dir=$CONFDIR/vcs/$(get_filename "$src")
+    local dir=$(get_dir "$1")
     local url=$(get_url "$src")
     url=${url##*git+}
     url=${url##*file:\/\/}
@@ -250,7 +262,7 @@ ensure_source_git() (
 )
 
 ensure_source_local() (
-    local src=$1
+    local src=$(get_src "$1")
     local url=$(get_url "$src")
 
     [ -e $url ] || {
@@ -408,8 +420,8 @@ dosymlink() {
     local dst
 
     [[ $3 =~ ^.*.__SRC$ ]] && {
-        ensure_source "$(head -1 $1/$3)" || return
-        src=$(get_filepath "$(head -1 $1/$3)")
+        ensure_source "$1/$3" || return
+        src=$(get_filepath "$1/$3")
         dst=$2/${3%%.__SRC}
     } || {
         src=$1/$3

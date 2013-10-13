@@ -616,7 +616,7 @@ _test_run "Remote git repository deploy" '
     _make_layer "${repo_layer[@]}"
     echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
     dotploy.sh "dotsrepo" "dotsdest"
-    _test_expect_symlink "dotsdest/.dotfile" "dotsdest/.dotploy/vcs/test"
+    _test_expect_symlink "dotsdest/.dotfile" "dotsdest/.dotploy/vcs/test.dotfile"
     _git_tear_down
 '
 
@@ -643,14 +643,14 @@ _test_run "Remote git repository deploy with a wrong existing repo" '
     (
         mkdir -p dotsdest/.dotploy/vcs/
         cd dotsdest/.dotploy/vcs/
-        git clone $TEST_FIELD/test.git >/dev/null
-        cd test
+        git clone $TEST_FIELD/test.git test.dotfile > /dev/null
+        cd test.dotfile
         git remote set-url --add origin $TEST_FIELD/test1.git
     )
     output=$(dotploy.sh "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     bakdir=dotsdest/.dotploy/backup/$(ls -1 --color=none dotsdest/.dotploy/backup)
     _test_expect_match "$output" "Warning: We are not in right repo, backup the existed repo to $TEST_FIELD/$bakdir"
-    _test_expect_directory $bakdir/test
+    _test_expect_directory $bakdir/test.dotfile
     _git_tear_down
 '
 
@@ -664,7 +664,7 @@ _test_run "Remote git repository deploy with an existing repo" '
     (
         mkdir -p dotsdest/.dotploy/vcs/
         cd dotsdest/.dotploy/vcs/
-        git clone $TEST_FIELD/test.git >/dev/null
+        git clone $TEST_FIELD/test.git test.dotfile > /dev/null
     )
     rm -rf $TEST_FIELD/test.git
     output=$(dotploy.sh "dotsrepo" "dotsdest" 2>&1) && echo "$output"
@@ -684,12 +684,12 @@ _test_run "Remote git repository deploy with reference specified" '
     echo "test2::git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile2.__SRC"
     echo "test3::git+file://$TEST_FIELD/test.git#commit=$(cd test.git;git rev-parse --short v0.1~)" > "dotsrepo/__DOTDIR/.dotfile3.__SRC"
     dotploy.sh "dotsrepo" "dotsdest"
-    _test_expect_symlink "dotsdest/.dotfile1" "dotsdest/.dotploy/vcs/test1"
-    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test1;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short v0.1)"
-    _test_expect_symlink "dotsdest/.dotfile2" "dotsdest/.dotploy/vcs/test2"
-    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test2;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
-    _test_expect_symlink "dotsdest/.dotfile3" "dotsdest/.dotploy/vcs/test3"
-    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test3;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short v0.1~)"
+    _test_expect_symlink "dotsdest/.dotfile1" "dotsdest/.dotploy/vcs/test1.dotfile1"
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test1.dotfile1;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short v0.1)"
+    _test_expect_symlink "dotsdest/.dotfile2" "dotsdest/.dotploy/vcs/test2.dotfile2"
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test2.dotfile2;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+    _test_expect_symlink "dotsdest/.dotfile3" "dotsdest/.dotploy/vcs/test3.dotfile3"
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test3.dotfile3;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short v0.1~)"
     _git_tear_down
 '
 
