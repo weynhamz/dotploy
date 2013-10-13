@@ -552,10 +552,14 @@ done
 set -- "${args[@]}"
 
 DOTSHOME=$(realpath $1)
+
+# make sure our destination is there
+[ -d $DOTSHOME ] || die "$DOTSHOME is not available"
+
 DOTSREPO=$DOTSHOME/__DOTDIR
 
 # die if it is not a dotsrepo
-[ -d $DOTSHOME ] && [ -d $DOTSREPO ] || die "$DOTSREPO is not available"
+[ -d $DOTSREPO ] || die "$DOTSREPO is not available"
 
 DESTHOME=$(realpath ${2:-$HOME})
 
