@@ -49,7 +49,9 @@ ABSPATH=$(_abspath)
 _set_up() {
     export PATH=$(realpath $ABSPATH/..):$PATH
 
-    export TEST_FIELD=$ABSPATH'/test-field'
+    export TEST_FIELD=$ABSPATH'/test-field/'$TEST_COUNT
+
+    rm -rf "$TEST_FIELD" || die "Failed to set up test facility."
 
     mkdir -p "$TEST_FIELD/dotsdest"
     mkdir -p "$TEST_FIELD/dotsrepo"
@@ -59,12 +61,7 @@ _set_up() {
 }
 
 _tear_down() {
-    rm -r "dotsdest"
-    rm -r "dotsrepo"
-
-    cd "$ABSPATH"
-
-    rmdir -p --ignore-fail-on-non-empty "$TEST_FIELD"
+    true
 }
 
 _make_layer() {
