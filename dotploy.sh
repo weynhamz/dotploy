@@ -24,6 +24,10 @@
 #
 #################################################################################
 
+# Build a standalone version
+#
+# export STANDALONE=1
+
 # Function: _abspath
 #
 #    Get the absolute path for a file
@@ -57,7 +61,8 @@ then
 elif [[ -f /usr/share/lib/bashLib/bashLib ]]
 then
     source "/usr/share/lib/bashLib/bashLib"
-else
+elif [[ -z $STANDALONE ]]
+then
     echo "Can not find bashLib, you need to install it as bundles first."
     exit 1
 fi

@@ -9,6 +9,14 @@ test: bundles/bashTest
 clean:
 	@rm -f dotploy && rm -rf bundles
 
+.PHONY: standalone
+standalone: dotploy
+
+dotploy: bundles/bashLib
+	@cat dotploy.sh bundles/bashLib/src/bashLib > dotploy; \
+	 sed -i 's/# \(export STANDALONE=1\)/\1/g' dotploy; \
+	 chmod a+x dotploy
+
 bundles:
 	@mkdir -p bundles
 
