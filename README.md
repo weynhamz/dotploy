@@ -88,8 +88,13 @@ How To Use it?
             for 'deploy' action, if the file exists in deployment destination,
             enabling this option will backup the existing file first.
 
+    If variable `DOTSHOME` has been configured in `$HOME/.dotploy/config`, then
+    argument `<path_to_the_dotfiles_repo>` is optional.
+
     The argument `<destination_of_the_deployment>` is optional. If it is absent,
-    then current `$HOME` directory will be used.
+    the `DESTHOME` variable configured in file `$HOME/.dotploy/config` will be
+    used. If both of them are undefined, then current `$HOME` directory will be
+    used.
 
     Conflicted files will be backed up into `.dotploy/` directory under your
     deployment destination.

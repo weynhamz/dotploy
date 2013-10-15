@@ -718,7 +718,9 @@ case "$ACTION" in
         ;;
 esac
 
-DOTSHOME=$(realpath $1)
+[ -f "$HOME/.dotploy/config" ] && source $HOME/.dotploy/config
+
+DOTSHOME=$(realpath ${1:-$DOTSHOME})
 
 # make sure our destination is there
 [ -d $DOTSHOME ] || die "$DOTSHOME is not available"
@@ -728,7 +730,7 @@ DOTSREPO=$DOTSHOME/__DOTDIR
 # die if it is not a dotsrepo
 [ -d $DOTSREPO ] || die "$DOTSREPO is not available"
 
-DESTHOME=$(realpath ${2:-$HOME})
+DESTHOME=$(realpath ${2:-${DESTHOME:-$HOME}})
 
 # make sure our destination is there
 [ -d $DESTHOME ] || die "$DESTHOME is not available"
