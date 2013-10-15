@@ -285,19 +285,19 @@ ensure_source_local() (
 )
 
 #
-# Function: doprune
+# Function: _prune
 #
 # Remove broken symlinks
 #
 # Parameters:
 #   $1  log file recorded the deployed symlinks
 #
-doprune() {
+_prune() {
     local logfile=$1
 
     local file
     for file in $(cat $logfile); do
-        docheck $file
+        _check $file
 
         [ $? -eq 1 ] && {
             print $'UPDATE:\t'"$file"
@@ -307,7 +307,7 @@ doprune() {
 }
 
 #
-# Function: docheck
+# Function: _check
 #
 # Check the status of a given file
 #
@@ -321,7 +321,7 @@ doprune() {
 #   3 not existed, do link
 #   4 do nothing, deploy its contents
 #
-docheck() {
+_check() {
     local src
     local dst=$1
     local repath
@@ -360,7 +360,7 @@ docheck() {
 }
 
 #
-# Function: dodeploy
+# Function: _deploy
 #
 # Deploy files
 #
@@ -370,7 +370,7 @@ docheck() {
 #
 # This function can be called recursively.
 #
-dodeploy() {
+_deploy() {
     local dotdir=$1
     local dstdir=$2
 
@@ -399,12 +399,12 @@ dodeploy() {
             if [ -e $dotdir/$file/__KEEPED ];then
                 # this directory needs to be kept,
                 # deploy its contents.
-                dodeploy $dotdir/$file $dstdir/$file
+                _deploy $dotdir/$file $dstdir/$file
             else
-                dosymlink $dotdir $dstdir $file
+                _symlink $dotdir $dstdir $file
             fi
         elif [ -f $dotdir/$file ]; then
-            dosymlink $dotdir $dstdir $file
+            _symlink $dotdir $dstdir $file
         fi
 
         grep "^$dstdir/$file\$" $LOGFILE >/dev/null 2>&1
@@ -417,7 +417,7 @@ dodeploy() {
 }
 
 #
-# Function: dosymlink
+# Function: _symlink
 #
 # Make a symlink.
 #
@@ -428,7 +428,7 @@ dodeploy() {
 #   $2  target directory where the dotfile will be deployed
 #   $3  filename of the dotfile
 #
-dosymlink() {
+_symlink() {
     local src
     local dst
 
@@ -465,7 +465,7 @@ dosymlink() {
         DEPTH=$(( $DEPTH - 1 ))
     }
 
-    docheck $dst
+    _check $dst
 
     local status=$?
 
@@ -606,20 +606,20 @@ LOGFILE=$CONFDIR/filelog
 }
 
 if [ -f $LOGFILE ];then
-    doprune $LOGFILE
+    _prune $LOGFILE
 fi
 
 # host user based dotfies deploy
 [ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
-    dodeploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
+    _deploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
 
 # host based dotfies deploy
 [ -d $DOTSREPO/__HOST.$HOST ] && \
-    dodeploy $DOTSREPO/__HOST.$HOST $DESTHOME
+    _deploy $DOTSREPO/__HOST.$HOST $DESTHOME
 
 # user based dotfies deploy
 [ -d $DOTSREPO/__USER.$USER ] && \
-    dodeploy $DOTSREPO/__USER.$USER $DESTHOME
+    _deploy $DOTSREPO/__USER.$USER $DESTHOME
 
 # shared dotfiles deploy
-dodeploy $DOTSREPO $DESTHOME
+_deploy $DOTSREPO $DESTHOME
