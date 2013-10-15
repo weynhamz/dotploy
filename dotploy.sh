@@ -494,17 +494,144 @@ _symlink() {
     }
 }
 
+doadd() {
+    #check if our target is in the desthome
+    [[ $TARGET =~ $DESTHOME/.* ]] || die "target not in dest home"
+
+    local rpath=${TARGET##$DESTHOME/}
+
+    local dest
+    if [[ $INHOST == 0 ]] && [[ $INUSER == 0 ]];then
+        dest=$DOTSREPO
+    elif [[ $INHOST == 1 ]] && [[ $INUSER == 0 ]];then
+        dest=$DOTSREPO/__HOST.$HOST
+    elif [[ $INHOST == 0 ]] && [[ $INUSER == 1 ]];then
+        dest=$DOTSREPO/__USER.$USER
+    elif [[ $INHOST == 1 ]] && [[ $INUSER == 1 ]];then
+        dest=$DOTSREPO/__HOST.$HOST/__USER.$USER
+    fi
+
+    #check if the target already in the destination
+    [[ -e $dest/$rpath ]] && die "target already exists"
+
+    local file=$(basename $rpath)
+
+    #move the target to the destination
+    mkdir -p "$dest/${rpath%%$file}"
+    mv "$TARGET" "$dest/${rpath%%$file}"
+
+    [[ $rpath == $file ]] || {
+        touch "$dest/${rpath%%$file}/__KEEPED"
+    }
+
+    #link the target back
+    _symlink "$dest/${rpath%%$file}" "${TARGET%%$file}" $file
+}
+
+doremove() {
+    #check if our target is a real link
+    [[ -h $TARGET ]] || die "target is not a link"
+
+    #check if our target is in the desthome
+    [[ $TARGET =~ $DESTHOME/.* ]] || die "target not in dest home"
+
+    #check if our target is linking to our dots repo
+    [[ $(readlink -fm $TARGET) =~ $DOTSREPO/.* ]] || die "target not link to our repo"
+
+    #remove the link and copy the original file
+    local from=$(readlink -fm $TARGET)
+    local to=$(dirname $TARGET)
+    rm $TARGET && cp -rf $from $to
+}
+
+dodeploy() {
+    CONFDIR=$DESTHOME/.dotploy
+
+    mkdir -p $CONFDIR || exit 1
+
+    # backup location, categarized by date
+    BAKPATH=$CONFDIR/backup/`date +%Y%m%d.%H.%M.%S`
+
+    # keep a record of the deployed files
+    LOGFILE=$CONFDIR/filelog
+
+    # transform old backup sctruction to the new one
+    [ -d $DOTSHOME/__BACKUP/$HOST ] && {
+        echo "Performing transition ..."
+
+        [ -f $LOGFILE ] && mv $LOGFILE $LOGFILE.bak
+        for bakpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | sed 's-/DESTHOME$--g');do
+            mv $bakpath/dotploy.log $LOGFILE &>/dev/null
+
+            [ -f $bakpath/dotploy.log ] && {
+                echo error
+                continue
+            }
+
+            rm $bakpath/DESTHOME &>/dev/null
+
+            [ -f $bakpath/DESTHOME ] && {
+                echo error
+                continue
+            }
+
+            rmdir $bakpath &> /dev/null || mv $bakpath $CONFDIR/backup
+        done
+        [ -f $LOGFILE.bak ] && mv $LOGFILE.bak $LOGFILE
+
+        rmdir --ignore-fail-on-non-empty -p $DOTSHOME/__BACKUP/$HOST
+
+        echo "Transition done."
+    }
+
+    if [ -f $LOGFILE ];then
+        _prune $LOGFILE
+    fi
+
+    # host user based dotfies deploy
+    [ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
+        _deploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
+
+    # host based dotfies deploy
+    [ -d $DOTSREPO/__HOST.$HOST ] && \
+        _deploy $DOTSREPO/__HOST.$HOST $DESTHOME
+
+    # user based dotfies deploy
+    [ -d $DOTSREPO/__USER.$USER ] && \
+        _deploy $DOTSREPO/__USER.$USER $DESTHOME
+
+    # shared dotfiles deploy
+    _deploy $DOTSREPO $DESTHOME
+}
+
 show_help() {
     cat << 'EOF'
 
 Usage:
 
-    dotploy.sh <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+    dotploy.sh add [--user] [--host] <file> <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+
+        add <file> to the dots repo, and link it back
+
+    dotploy.sh remove <file> <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+
+        Remove the link of <file> to the dots repo, and copy the original file back
+
+    dotploy.sh deploy <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+
+        deploy the dots repo the the destination
 
 Options:
 
     -h, show help information
     -v, be verbose about the process
+    --user,
+        add to the `__USER.$USER` directory
+    --host,
+        add to the `__HOST.$HOST` directory
+    --user --host,
+        add to the `__HOST.$HOST/__USER.$USER` directory
+
 The argument `<destination_of_the_deployment>` is optional. If it is absent,
 then current `$HOME` directory will be used.
 
@@ -516,10 +643,18 @@ EOF
 
 declare -a args
 declare -i DEPTH=0
+declare -i INUSER=0
+declare -i INHOST=0
 declare -i VERBOSE=0
 while [ $# -gt 0 ]
 do
     case "$1" in
+        --user )
+            INUSER=1
+        ;;
+        --host )
+            INHOST=1
+        ;;
         -p )
             echo "Option '-p' has been depreciated"
             show_help
@@ -551,6 +686,22 @@ done
 
 set -- "${args[@]}"
 
+ACTION=$1
+case "$ACTION" in
+    add | remove )
+        shift
+        TARGET=$(realpath --no-symlinks ${1%%\/})
+        shift
+        ;;
+    deploy )
+        shift
+        ;;
+    * )
+        show_help
+        exit 1
+        ;;
+esac
+
 DOTSHOME=$(realpath $1)
 
 # make sure our destination is there
@@ -566,60 +717,4 @@ DESTHOME=$(realpath ${2:-$HOME})
 # make sure our destination is there
 [ -d $DESTHOME ] || die "$DESTHOME is not available"
 
-CONFDIR=$DESTHOME/.dotploy
-
-mkdir -p $CONFDIR || exit 1
-
-# backup location, categarized by date
-BAKPATH=$CONFDIR/backup/`date +%Y%m%d.%H.%M.%S`
-
-# keep a record of the deployed files
-LOGFILE=$CONFDIR/filelog
-
-# transform old backup sctruction to the new one
-[ -d $DOTSHOME/__BACKUP/$HOST ] && {
-    echo "Performing transition ..."
-
-    [ -f $LOGFILE ] && mv $LOGFILE $LOGFILE.bak
-    for bakpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | sed 's-/DESTHOME$--g');do
-        mv $bakpath/dotploy.log $LOGFILE &>/dev/null
-
-        [ -f $bakpath/dotploy.log ] && {
-            echo error
-            continue
-        }
-
-        rm $bakpath/DESTHOME &>/dev/null
-
-        [ -f $bakpath/DESTHOME ] && {
-            echo error
-            continue
-        }
-
-        rmdir $bakpath &> /dev/null || mv $bakpath $CONFDIR/backup
-    done
-    [ -f $LOGFILE.bak ] && mv $LOGFILE.bak $LOGFILE
-
-    rmdir --ignore-fail-on-non-empty -p $DOTSHOME/__BACKUP/$HOST
-
-    echo "Transition done."
-}
-
-if [ -f $LOGFILE ];then
-    _prune $LOGFILE
-fi
-
-# host user based dotfies deploy
-[ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
-    _deploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
-
-# host based dotfies deploy
-[ -d $DOTSREPO/__HOST.$HOST ] && \
-    _deploy $DOTSREPO/__HOST.$HOST $DESTHOME
-
-# user based dotfies deploy
-[ -d $DOTSREPO/__USER.$USER ] && \
-    _deploy $DOTSREPO/__USER.$USER $DESTHOME
-
-# shared dotfiles deploy
-_deploy $DOTSREPO $DESTHOME
+do$ACTION

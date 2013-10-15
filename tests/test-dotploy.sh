@@ -149,7 +149,7 @@ _test_run "Shared dot files deployment" '
         "dotsrepo/__DOTDIR/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "dotsrepo/__DOTDIR/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "dotsrepo/__DOTDIR/.dotfile"
 '
@@ -162,7 +162,7 @@ _test_run "User based dot files deployment" '
         "dotsrepo/__DOTDIR/__USER.$USER/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "dotsrepo/__DOTDIR/__USER.$USER/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "dotsrepo/__DOTDIR/__USER.$USER/.dotfile"
 '
@@ -175,7 +175,7 @@ _test_run "Host based dot files deployment" '
         "dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile"
 '
@@ -190,7 +190,7 @@ _test_run "Host based dot files deployment with user based exits" '
         "dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile"
 '
@@ -207,7 +207,7 @@ _test_run "Host then user based dot file deployment" '
         "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile"
 '
@@ -220,10 +220,10 @@ _test_run "Fallback host based to shared" '
         "dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     rm "dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile"
     rmdir "dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir/"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "dotsrepo/__DOTDIR/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "dotsrepo/__DOTDIR//.dotfile"
 '
@@ -236,10 +236,10 @@ _test_run "Fallback user based to shared" '
         "dotsrepo/__DOTDIR/__USER.$USER/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     rm "dotsrepo/__DOTDIR/__USER.$USER/.dotfile"
     rmdir "dotsrepo/__DOTDIR/__USER.$USER/.dotdir/"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "dotsrepo/__DOTDIR/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "dotsrepo/__DOTDIR/.dotfile"
 '
@@ -252,10 +252,10 @@ _test_run "Fallback host and user based to shared" '
         "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     rm "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile"
     rmdir "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "dotsrepo/__DOTDIR/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "dotsrepo/__DOTDIR/.dotfile"
 '
@@ -268,10 +268,10 @@ _test_run "Fallback host and user based deployment to user based" '
         "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     rm "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile"
     rmdir "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir/"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "dotsrepo/__DOTDIR/__USER.$USER/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "dotsrepo/__DOTDIR/__USER.$USER/.dotfile"
 '
@@ -284,10 +284,10 @@ _test_run "Fallback host and user based deployment to host based" '
         "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     rm "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile"
     rmdir "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile"
 '
@@ -302,10 +302,10 @@ _test_run "Fallback host and user based deployment to host based when __USER and
         "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" dotsdest
+    dotploy.sh deploy "dotsrepo" dotsdest
     rm "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile"
     rmdir "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile"
 '
@@ -331,7 +331,7 @@ _test_run "Backup if destination already exists" '
     )
     _make_layer "${repo_layer[@]}"
     _test_expect_missing "dotsdest/.dotploy/backup"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_directory "dotsdest/.dotploy/backup"
     _test_expect_expr_true "ls -RA dotsdest/.dotploy/backup | grep -q .dotdir1"
     _test_expect_expr_true "ls -RA dotsdest/.dotploy/backup | grep -q .dotfile1"
@@ -375,7 +375,7 @@ _test_run "Whether __IGNORE works as expected" '
     echo "^file3$" >> "dotsrepo/__DOTDIR/__HOST.$HOST/__IGNORE"
     echo "^dir4$"  >> "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/__IGNORE"
     echo "^file4$" >> "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/__IGNORE"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_missing "dotsdest/dir1"
     _test_expect_missing "dotsdest/file1"
     _test_expect_missing "dotsdest/dir2"
@@ -410,7 +410,7 @@ _test_run "Directory contains __KEEPED deployment" '
         "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir4/subfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_directory "dotsdest/.dotdir1"
     _test_expect_directory "dotsdest/.dotdir2"
     _test_expect_directory "dotsdest/.dotdir3"
@@ -445,7 +445,7 @@ _test_run "Destination of the directory conatains __KEEPED exists as a file" '
         "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir4/subfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_directory "dotsdest/.dotdir1"
     _test_expect_directory "dotsdest/.dotdir2"
     _test_expect_directory "dotsdest/.dotdir3"
@@ -480,7 +480,7 @@ _test_run "Destination of the directory conatains __KEEPED exists as a directory
         "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir4/subfile"
     )
     _make_layer "${repo_layer[@]}"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_directory "dotsdest/.dotdir1"
     _test_expect_directory "dotsdest/.dotdir2"
     _test_expect_directory "dotsdest/.dotdir3"
@@ -531,7 +531,7 @@ _test_run "Whether __IGNORE and __KEEPED works together" '
     echo "^file$" >> "dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir3/__IGNORE"
     echo "^dir$"  >> "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir4/__IGNORE"
     echo "^file$" >> "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir4/__IGNORE"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_missing "dotsdest/.dotdir1/dir"
     _test_expect_missing "dotsdest/.dotdir1/file"
     _test_expect_missing "dotsdest/.dotdir2/dir"
@@ -574,7 +574,7 @@ _test_run "Use __IGNORE ignore directory contains __KEEPED" '
     echo "^.dotdir2$" >> "dotsrepo/__DOTDIR/__USER.$USER/__IGNORE"
     echo "^.dotdir3$" >> "dotsrepo/__DOTDIR/__HOST.$HOST/__IGNORE"
     echo "^.dotdir4$" >> "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/__IGNORE"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_missing "dotsdest/.dotdir1"
     _test_expect_missing "dotsdest/.dotdir2"
     _test_expect_missing "dotsdest/.dotdir3"
@@ -591,7 +591,7 @@ _test_run "Local file/directory deploy" '
     _make_layer "${repo_layer[@]}"
     echo "$TEST_FIELD/normaldir" >> "dotsrepo/__DOTDIR/.dotfile1.__SRC"
     echo "$TEST_FIELD/normalfile" >> "dotsrepo/__DOTDIR/.dotfile2.__SRC"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotfile1" "$TEST_FIELD/normaldir"
     _test_expect_symlink "dotsdest/.dotfile2" "$TEST_FIELD/normalfile"
     rm -rf $TEST_FIELD/normaldir
@@ -606,7 +606,7 @@ _test_run "Local file/directory deploy with target missing" '
     _make_layer "${repo_layer[@]}"
     echo "$TEST_FIELD/normaldir" > "dotsrepo/__DOTDIR/.dotfile1.__SRC"
     echo "$TEST_FIELD/normalfile" > "dotsrepo/__DOTDIR/.dotfile2.__SRC"
-    output=$(dotploy.sh "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     _test_expect_match "$output" "ERROR: Target $TEST_FIELD/normaldir does not exist"
     _test_expect_missing "dotsdest/.dotfile1"
     _test_expect_match "$output" "ERROR: Target $TEST_FIELD/normalfile does not exist"
@@ -620,7 +620,7 @@ _test_run "Remote git repository deploy" '
     )
     _make_layer "${repo_layer[@]}"
     echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotfile" "dotsdest/.dotploy/vcs/test.dotfile"
     _git_tear_down
 '
@@ -632,7 +632,7 @@ _test_run "Remote git repository deploy with wrong repo url" '
     )
     _make_layer "${repo_layer[@]}"
     echo "git+file://$TEST_FIELD/test1.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
-    output=$(dotploy.sh "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     _test_expect_match "$output" "ERROR: Failed to clone repository $TEST_FIELD/test1.git ..."
     _test_expect_missing "dotsdest/.dotfile"
     _git_tear_down
@@ -652,7 +652,7 @@ _test_run "Remote git repository deploy with a wrong existing repo" '
         cd test.dotfile
         git remote set-url --add origin $TEST_FIELD/test1.git
     )
-    output=$(dotploy.sh "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     bakdir=dotsdest/.dotploy/backup/$(ls -1 --color=none dotsdest/.dotploy/backup)
     _test_expect_match "$output" "Warning: We are not in right repo, backup the existed repo to $TEST_FIELD/$bakdir"
     _test_expect_directory $bakdir/test.dotfile
@@ -672,7 +672,7 @@ _test_run "Remote git repository deploy with an existing repo" '
         git clone $TEST_FIELD/test.git test.dotfile > /dev/null
     )
     rm -rf $TEST_FIELD/test.git
-    output=$(dotploy.sh "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     _test_expect_match "$output" "Failed to fetch upstream ..."
     _git_tear_down
 '
@@ -696,7 +696,7 @@ _test_run "Remote git repository deploy with reference specified" '
     echo "test3::git+file://$TEST_FIELD/test.git#commit=$(cd test.git;git rev-parse --short v0.1~)" > "dotsrepo/__DOTDIR/.dotfile3.__SRC"
     echo "test4::git+file://$TEST_FIELD/test.git#file=5/6" > "dotsrepo/__DOTDIR/.dotfile4.__SRC"
     echo "test5::git+file://$TEST_FIELD/test.git#branch=develop&file=7/8" > "dotsrepo/__DOTDIR/.dotfile5.__SRC"
-    dotploy.sh "dotsrepo" "dotsdest"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotfile1" "dotsdest/.dotploy/vcs/test1.dotfile1"
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test1.dotfile1;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short v0.1)"
     _test_expect_symlink "dotsdest/.dotfile2" "dotsdest/.dotploy/vcs/test2.dotfile2"
@@ -707,6 +707,218 @@ _test_run "Remote git repository deploy with reference specified" '
     _test_expect_symlink "dotsdest/.dotfile5" "dotsdest/.dotploy/vcs/test5.dotfile5/7/8"
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test5.dotfile5;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
     _git_tear_down
+'
+
+_test_run "Add given file to the dots repo" '
+    repo_layer=(
+        "dotsdest/.dotdir1/"
+        "dotsdest/.dotfile1"
+        "dotsdest/.dotdir2/dotfile2"
+    )
+    _make_layer "${repo_layer[@]}"
+    for i in "${repo_layer[@]}"
+    do
+        dotploy.sh add $i "dotsrepo" "dotsdest"
+    done
+    _test_expect_expr_true "test -d dotsrepo/__DOTDIR/.dotdir1"
+    _test_expect_symlink "dotsdest/.dotdir1" "dotsrepo/__DOTDIR/.dotdir1"
+    _test_expect_expr_true "test -f dotsrepo/__DOTDIR/.dotfile1"
+    _test_expect_symlink "dotsdest/.dotfile1" "dotsrepo/__DOTDIR/.dotfile1"
+    _test_expect_expr_true "test -d dotsrepo/__DOTDIR/.dotdir2"
+    _test_expect_expr_true "test -f dotsrepo/__DOTDIR/.dotdir2/dotfile2"
+    _test_expect_symlink "dotsdest/.dotdir2/dotfile2" "dotsrepo/__DOTDIR/.dotdir2/dotfile2"
+'
+
+_test_run "Add given file to the dots repo with --host" '
+    repo_layer=(
+        "dotsdest/.dotdir1/"
+        "dotsdest/.dotfile1"
+        "dotsdest/.dotdir2/dotfile2"
+    )
+    _make_layer "${repo_layer[@]}"
+    for i in "${repo_layer[@]}"
+    do
+        dotploy.sh add --host $i "dotsrepo" "dotsdest"
+    done
+    _test_expect_expr_true "test -d dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir1"
+    _test_expect_symlink "dotsdest/.dotdir1" "dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir1"
+    _test_expect_expr_true "test -f dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile1"
+    _test_expect_symlink "dotsdest/.dotfile1" "dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile1"
+    _test_expect_expr_true "test -f dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir2/dotfile2"
+    _test_expect_symlink "dotsdest/.dotdir2/dotfile2" "dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir2/dotfile2"
+'
+
+_test_run "Add given file to the dots repo with --user" '
+    repo_layer=(
+        "dotsdest/.dotdir1/"
+        "dotsdest/.dotfile1"
+        "dotsdest/.dotdir2/dotfile2"
+    )
+    _make_layer "${repo_layer[@]}"
+    for i in "${repo_layer[@]}"
+    do
+        dotploy.sh add --user $i "dotsrepo" "dotsdest"
+    done
+    _test_expect_expr_true "test -d dotsrepo/__DOTDIR/__USER.$USER/.dotdir1"
+    _test_expect_symlink "dotsdest/.dotdir1" "dotsrepo/__DOTDIR/__USER.$USER/.dotdir1"
+    _test_expect_expr_true "test -f dotsrepo/__DOTDIR/__USER.$USER/.dotfile1"
+    _test_expect_symlink "dotsdest/.dotfile1" "dotsrepo/__DOTDIR/__USER.$USER/.dotfile1"
+    _test_expect_expr_true "test -f dotsrepo/__DOTDIR/__USER.$USER/.dotdir2/dotfile2"
+    _test_expect_symlink "dotsdest/.dotdir2/dotfile2" "dotsrepo/__DOTDIR/__USER.$USER/.dotdir2/dotfile2"
+'
+
+_test_run "Add given file to the dots repo with --user and --host" '
+    repo_layer=(
+        "dotsdest/.dotdir1/"
+        "dotsdest/.dotfile1"
+        "dotsdest/.dotdir2/dotfile2"
+    )
+    _make_layer "${repo_layer[@]}"
+    for i in "${repo_layer[@]}"
+    do
+        dotploy.sh add --host --user $i "dotsrepo" "dotsdest"
+    done
+    _test_expect_expr_true "test -d dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir1"
+    _test_expect_symlink "dotsdest/.dotdir1" "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir1"
+    _test_expect_expr_true "test -f dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile1"
+    _test_expect_symlink "dotsdest/.dotfile1" "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile1"
+    _test_expect_expr_true "test -f dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir2/dotfile2"
+    _test_expect_symlink "dotsdest/.dotdir2/dotfile2" "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir2/dotfile2"
+'
+
+_test_run "Add given file which is not in the dots dest" '
+    repo_layer=(
+        ".dotdir1/"
+        ".dotfile1"
+        ".dotdir2/dotfile2"
+    )
+    _make_layer "${repo_layer[@]}"
+
+    output=$(dotploy.sh add ".dotdir1" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target not in dest home"
+    _test_expect_expr_true "test -d .dotdir1"
+
+    output=$(dotploy.sh add ".dotfile1" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target not in dest home"
+    _test_expect_expr_true "test -f .dotfile1"
+
+    output=$(dotploy.sh add ".dotdir2/dotfile2" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target not in dest home"
+    _test_expect_expr_true "test -f .dotdir2/dotfile2"
+'
+
+_test_run "Add given file to the dots repo with the target already exists" '
+    repo_layer=(
+        "dotsdest/.dotdir1/"
+        "dotsrepo/__DOTDIR/.dotdir1/"
+        "dotsdest/.dotfile1"
+        "dotsrepo/__DOTDIR/.dotfile1"
+        "dotsdest/.dotdir2/dotfile2"
+        "dotsrepo/__DOTDIR/.dotdir2/dotfile2"
+    )
+    _make_layer "${repo_layer[@]}"
+
+    output=$(dotploy.sh add "dotsdest/.dotdir1/" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target already exists"
+    _test_expect_expr_true "test -d dotsdest/.dotdir1"
+
+    output=$(dotploy.sh add "dotsdest/.dotfile1" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target already exists"
+    _test_expect_expr_true "test -f dotsdest/.dotfile1"
+
+    output=$(dotploy.sh add "dotsdest/.dotdir2/dotfile2" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target already exists"
+    _test_expect_expr_true "test -f dotsdest/.dotdir2/dotfile2"
+'
+
+_test_run "Remove given file from linking to dots repo" '
+    repo_layer=(
+        "dotsdest/.dotdir2/"
+        "dotsrepo/__DOTDIR/.dotdir1/"
+        "dotsrepo/__DOTDIR/.dotfile1"
+        "dotsrepo/__DOTDIR/.dotdir2/dotfile2"
+    )
+    _make_layer "${repo_layer[@]}"
+
+    ln -s $(realpath "dotsrepo/__DOTDIR/.dotdir1/") "dotsdest/.dotdir1"
+    dotploy.sh remove "dotsdest/.dotdir1" "dotsrepo" "dotsdest"
+    _test_expect_expr_true "test ! -h dotsdest/.dotdir1"
+
+    ln -s $(realpath "dotsrepo/__DOTDIR/.dotfile1") "dotsdest/.dotfile1"
+    dotploy.sh remove "dotsdest/.dotfile1" "dotsrepo" "dotsdest"
+    _test_expect_expr_true "test ! -h dotsdest/.dotfile1"
+
+    ln -s $(realpath "dotsrepo/__DOTDIR/.dotdir2/dotfile2") "dotsdest/.dotdir2/dotfile2"
+    dotploy.sh remove "dotsdest/.dotdir2/dotfile2" "dotsrepo" "dotsdest"
+    _test_expect_expr_true "test ! -h dotsdest/.dotdir2/dotfile2"
+'
+
+_test_run "Remove given file which is not a link" '
+    repo_layer=(
+        "dotsdest/.dotdir1/"
+        "dotsrepo/__DOTDIR/.dotdir1/"
+        "dotsdest/.dotfile1"
+        "dotsrepo/__DOTDIR/.dotfile1"
+        "dotsdest/.dotdir2/dotfile2"
+        "dotsrepo/__DOTDIR/.dotdir2/dotfile2"
+    )
+    _make_layer "${repo_layer[@]}"
+
+    output=$(dotploy.sh remove "dotsdest/.dotdir1/" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target is not a link"
+
+    output=$(dotploy.sh remove "dotsdest/.dotfile1" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target is not a link"
+
+    output=$(dotploy.sh remove "dotsdest/.dotdir2/dotfile2" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target is not a link"
+'
+
+_test_run "Remove given file which is not in the dots dest" '
+    repo_layer=(
+        ".dotdir2/"
+        "dotsrepo/__DOTDIR/.dotdir1/"
+        "dotsrepo/__DOTDIR/.dotfile1"
+        "dotsrepo/__DOTDIR/.dotdir2/dotfile2"
+    )
+    _make_layer "${repo_layer[@]}"
+
+    ln -s $(realpath "dotsrepo/__DOTDIR/.dotdir1/") ".dotdir1"
+    output=$(dotploy.sh remove ".dotdir1" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target not in dest home"
+
+    ln -s $(realpath "dotsrepo/__DOTDIR/.dotfile1") ".dotfile1"
+    output=$(dotploy.sh remove ".dotfile1" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target not in dest home"
+
+    ln -s $(realpath "dotsrepo/__DOTDIR/.dotdir2/dotfile2") ".dotdir2/dotfile2"
+    output=$(dotploy.sh remove ".dotdir2/dotfile2" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target not in dest home"
+'
+
+_test_run "Remove given file which is not linking to the dots repo" '
+    repo_layer=(
+        ".dotdir1/"
+        ".dotfile1"
+        ".dotdir2/dotfile2"
+        "dotsdest/.dotdir2/"
+        "dotsrepo/__DOTDIR/.dotdir1/"
+        "dotsrepo/__DOTDIR/.dotfile1"
+        "dotsrepo/__DOTDIR/.dotdir2/dotfile2"
+    )
+    _make_layer "${repo_layer[@]}"
+
+    ln -s $(realpath ".dotdir1/") "dotsdest/.dotdir1"
+    output=$(dotploy.sh remove "dotsdest/.dotdir1/" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target not link to our repo"
+
+    ln -s $(realpath ".dotfile1") "dotsdest/.dotfile1"
+    output=$(dotploy.sh remove "dotsdest/.dotfile1" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target not link to our repo"
+
+    ln -s $(realpath ".dotdir2/dotfile2") "dotsdest/.dotdir2/dotfile2"
+    output=$(dotploy.sh remove "dotsdest/.dotdir2/dotfile2" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "target not link to our repo"
 '
 
 _test_done

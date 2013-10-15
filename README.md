@@ -58,12 +58,30 @@ How To Use it?
 
     Usage:
 
-        dotploy.sh <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+        dotploy.sh add [--user] [--host] <file> <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+
+            Add <file> to the dots repo and link it back. Be aware that <file>
+            must be in <destination_of_the_deployment>.
+
+        dotploy.sh remove <file> <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+
+            Remove the link of <file> to the dots repo, and copy the original
+            file back. Be aware that <file> must be in <destination_of_the_deployment>.
+
+        dotploy.sh deploy <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+
+            Deploy the dots repo the the destination
 
     Options:
 
         -h, show help information
         -v, be verbose about the process
+        --user,
+            add to the `__USER.$USER` directory
+        --host,
+            add to the `__HOST.$HOST` directory
+        --user --host,
+            add to the `__HOST.$HOST/__USER.$USER` directory
 
     The argument `<destination_of_the_deployment>` is optional. If it is absent,
     then current `$HOME` directory will be used.
