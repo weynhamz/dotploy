@@ -12,18 +12,20 @@ clean:
 bundles:
 	@mkdir -p bundles
 
-bundles/bashLib: bundles
+bundles/bashLib: bundles FORCE
 	@if [ -d bundles/bashLib ]; \
 	 then \
-	    ( cd bundles/bashLib; git pull ); \
+	    ( cd bundles/bashLib; git checkout master; git fetch --all --prune; git reset --hard origin/master ); \
 	 else \
 	     git clone https://github.com/techlivezheng/bashLib.git bundles/bashLib; \
 	 fi
 
-bundles/bashTest: bundles/bashLib
+bundles/bashTest: bundles/bashLib FORCE
 	@if [ -d bundles/bashTest ]; \
 	 then \
-	    ( cd bundles/bashTest; git pull ); \
+	    ( cd bundles/bashTest; git checkout master; git fetch --all --prune; git reset --hard origin/master ); \
 	 else \
 	     git clone https://github.com/techlivezheng/bashTest.git bundles/bashTest; \
 	 fi
+
+FORCE:
