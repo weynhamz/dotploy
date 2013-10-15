@@ -479,10 +479,15 @@ _symlink() {
 
     # backup existed file
     [ $status -eq 2 ] && {
-        print $'BACKUP:\t'"$dst"
-        DEPTH=$(( $DEPTH + 1 ))
-        print "$(mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
-        DEPTH=$(( $DEPTH - 1 ))
+        [ $FORCE = 1 ] && {
+            print $'BACKUP:\t'"$dst"
+            DEPTH=$(( $DEPTH + 1 ))
+            print "$(mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
+            DEPTH=$(( $DEPTH - 1 ))
+        } || {
+            printw "$dst already exists, use --force option to force deploying"
+            return
+        }
     }
 
     # symlink the file in the repo
@@ -512,7 +517,9 @@ doadd() {
     fi
 
     #check if the target already in the destination
-    [[ -e $dest/$rpath ]] && die "target already exists"
+    [[ -e $dest/$rpath ]] && [[ $FORCE == 0 ]] && {
+        die "target already exists"
+    }
 
     local file=$(basename $rpath)
 
@@ -609,7 +616,7 @@ show_help() {
 
 Usage:
 
-    dotploy.sh add [--user] [--host] <file> <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+    dotploy.sh add [--user] [--host] [--force] <file> <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
 
         add <file> to the dots repo, and link it back
 
@@ -617,7 +624,7 @@ Usage:
 
         Remove the link of <file> to the dots repo, and copy the original file back
 
-    dotploy.sh deploy <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+    dotploy.sh deploy [--force] <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
 
         deploy the dots repo the the destination
 
@@ -631,6 +638,11 @@ Options:
         add to the `__HOST.$HOST` directory
     --user --host,
         add to the `__HOST.$HOST/__USER.$USER` directory
+    --force,
+        for 'add' action, if the file exists in dots repo, enabling this
+        option will overwrite it;
+        for 'deploy' action, if the file exists in deployment destination,
+        enabling this option will backup the existing file first.
 
 The argument `<destination_of_the_deployment>` is optional. If it is absent,
 then current `$HOME` directory will be used.
@@ -643,6 +655,7 @@ EOF
 
 declare -a args
 declare -i DEPTH=0
+declare -i FORCE=0
 declare -i INUSER=0
 declare -i INHOST=0
 declare -i VERBOSE=0
@@ -654,6 +667,9 @@ do
         ;;
         --host )
             INHOST=1
+        ;;
+        --force )
+            FORCE=1
         ;;
         -p )
             echo "Option '-p' has been depreciated"

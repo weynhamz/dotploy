@@ -330,8 +330,38 @@ _test_run "Backup if destination already exists" '
         "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile4"
     )
     _make_layer "${repo_layer[@]}"
-    _test_expect_missing "dotsdest/.dotploy/backup"
     dotploy.sh deploy "dotsrepo" "dotsdest"
+    _test_expect_expr_true "test -d dotsdest/.dotdir1"
+    _test_expect_expr_true "test -f dotsdest/.dotfile1"
+    _test_expect_expr_true "test -d dotsdest/.dotdir2"
+    _test_expect_expr_true "test -f dotsdest/.dotfile2"
+    _test_expect_expr_true "test -d dotsdest/.dotdir3"
+    _test_expect_expr_true "test -f dotsdest/.dotfile3"
+    _test_expect_expr_true "test -d dotsdest/.dotdir4"
+    _test_expect_expr_true "test -f dotsdest/.dotfile4"
+'
+_test_run "Backup if destination already exists with --force option" '
+    repo_layer=(
+        "dotsdest/.dotdir1/"
+        "dotsdest/.dotfile1"
+        "dotsrepo/__DOTDIR/.dotdir1/"
+        "dotsrepo/__DOTDIR/.dotfile1"
+        "dotsdest/.dotdir2/"
+        "dotsdest/.dotfile2"
+        "dotsrepo/__DOTDIR/__USER.$USER/.dotdir2/"
+        "dotsrepo/__DOTDIR/__USER.$USER/.dotfile2"
+        "dotsdest/.dotdir3/"
+        "dotsdest/.dotfile3"
+        "dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir3/"
+        "dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile3"
+        "dotsdest/.dotdir4/"
+        "dotsdest/.dotfile4"
+        "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir4/"
+        "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile4"
+    )
+    _make_layer "${repo_layer[@]}"
+    _test_expect_missing "dotsdest/.dotploy/backup"
+    dotploy.sh deploy --force "dotsrepo" "dotsdest"
     _test_expect_directory "dotsdest/.dotploy/backup"
     _test_expect_expr_true "ls -RA dotsdest/.dotploy/backup | grep -q .dotdir1"
     _test_expect_expr_true "ls -RA dotsdest/.dotploy/backup | grep -q .dotfile1"
@@ -815,6 +845,8 @@ _test_run "Add given file to the dots repo with the target already exists" '
         "dotsrepo/__DOTDIR/.dotfile1"
         "dotsdest/.dotdir2/dotfile2"
         "dotsrepo/__DOTDIR/.dotdir2/dotfile2"
+        "dotsdest/.dotfile3"
+        "dotsrepo/__DOTDIR/.dotfile3"
     )
     _make_layer "${repo_layer[@]}"
 
@@ -829,6 +861,9 @@ _test_run "Add given file to the dots repo with the target already exists" '
     output=$(dotploy.sh add "dotsdest/.dotdir2/dotfile2" "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     _test_expect_match "$output" "target already exists"
     _test_expect_expr_true "test -f dotsdest/.dotdir2/dotfile2"
+
+    dotploy.sh add --force "dotsdest/.dotfile3" "dotsrepo" "dotsdest"
+    _test_expect_expr_true "test -h dotsdest/.dotfile3"
 '
 
 _test_run "Remove given file from linking to dots repo" '

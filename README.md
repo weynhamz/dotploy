@@ -58,7 +58,7 @@ How To Use it?
 
     Usage:
 
-        dotploy.sh add [--user] [--host] <file> <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+        dotploy.sh add [--user] [--host] [--force] <file> <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
 
             Add <file> to the dots repo and link it back. Be aware that <file>
             must be in <destination_of_the_deployment>.
@@ -68,7 +68,7 @@ How To Use it?
             Remove the link of <file> to the dots repo, and copy the original
             file back. Be aware that <file> must be in <destination_of_the_deployment>.
 
-        dotploy.sh deploy <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
+        dotploy.sh deploy [--force] <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
 
             Deploy the dots repo the the destination
 
@@ -82,6 +82,11 @@ How To Use it?
             add to the `__HOST.$HOST` directory
         --user --host,
             add to the `__HOST.$HOST/__USER.$USER` directory
+        --force,
+            for 'add' action, if the file exists in dots repo, enabling this
+            option will overwrite it;
+            for 'deploy' action, if the file exists in deployment destination,
+            enabling this option will backup the existing file first.
 
     The argument `<destination_of_the_deployment>` is optional. If it is absent,
     then current `$HOME` directory will be used.
