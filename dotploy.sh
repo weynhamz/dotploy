@@ -2,7 +2,7 @@
 #
 # File: dotploy.sh
 #
-# Author: Techliv Zheng <techlivezheng at gmail.com>
+# Author: Techlive Zheng <techlivezheng at gmail.com>
 #
 #################################################################################
 #
