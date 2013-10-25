@@ -15,6 +15,7 @@ standalone: dotploy
 dotploy: bundles/bashLib
 	@cat dotploy.sh bundles/bashLib/src/bashLib > dotploy; \
 	 sed -i 's/# \(export STANDALONE=1\)/\1/g' dotploy; \
+	 sed -i 's/dotploy\.sh/dotploy/g' dotploy; \
 	 chmod a+x dotploy
 
 bundles:

@@ -1,3 +1,9 @@
+Version 0.3.1
+-------------
+
+    * Doc updates, typo fixes
+    * Standalone version improvements
+
 Version 0.3
 -----------
 
