@@ -623,19 +623,23 @@ _test_run "Local file/directory deploy" '
         "dotsrepo/__DOTDIR/.dotfile3.__SRC"
         "dotsrepo/__DOTDIR/.dotfile4.__SRC"
         "dotsrepo/__DOTDIR/.dotfile5.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile6.__SRC"
     )
     _make_layer "${repo_layer[@]}"
+    ( cd dotsdest/normaldir1; ln -s ../normalfile1 normalfile1 )
     echo "$TEST_FIELD/normaldir" >> "dotsrepo/__DOTDIR/.dotfile1.__SRC"
     echo "$TEST_FIELD/normalfile" >> "dotsrepo/__DOTDIR/.dotfile2.__SRC"
     echo "$TEST_FIELD/normaldir/normalfile" >> "dotsrepo/__DOTDIR/.dotfile3.__SRC"
     echo "normaldir1" > "dotsrepo/__DOTDIR/.dotfile4.__SRC"
     echo "normalfile1" > "dotsrepo/__DOTDIR/.dotfile5.__SRC"
+    echo "normaldir1/normalfile1" > "dotsrepo/__DOTDIR/.dotfile6.__SRC"
     dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotfile1" "$TEST_FIELD/normaldir"
     _test_expect_symlink "dotsdest/.dotfile2" "$TEST_FIELD/normalfile"
     _test_expect_symlink "dotsdest/.dotfile3" "$TEST_FIELD/normaldir/normalfile"
     _test_expect_symlink "dotsdest/.dotfile4" "$TEST_FIELD/dotsdest/normaldir1"
     _test_expect_symlink "dotsdest/.dotfile5" "$TEST_FIELD/dotsdest/normalfile1"
+    _test_expect_symlink "dotsdest/.dotfile6" "$TEST_FIELD/dotsdest/normaldir1/normalfile1"
 '
 
 _test_run "Local file/directory deploy with target missing" '
@@ -645,6 +649,7 @@ _test_run "Local file/directory deploy with target missing" '
         "dotsrepo/__DOTDIR/.dotfile3.__SRC"
         "dotsrepo/__DOTDIR/.dotfile4.__SRC"
         "dotsrepo/__DOTDIR/.dotfile5.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile6.__SRC"
     )
     _make_layer "${repo_layer[@]}"
     echo "$TEST_FIELD/normaldir" > "dotsrepo/__DOTDIR/.dotfile1.__SRC"
@@ -652,12 +657,14 @@ _test_run "Local file/directory deploy with target missing" '
     echo "$TEST_FIELD/normaldir/normalfile" >> "dotsrepo/__DOTDIR/.dotfile3.__SRC"
     echo "normaldir1" > "dotsrepo/__DOTDIR/.dotfile4.__SRC"
     echo "normalfile1" > "dotsrepo/__DOTDIR/.dotfile5.__SRC"
+    echo "normaldir1/normalfile1" > "dotsrepo/__DOTDIR/.dotfile6.__SRC"
     dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotfile1" "$TEST_FIELD/normaldir"
     _test_expect_symlink "dotsdest/.dotfile2" "$TEST_FIELD/normalfile"
     _test_expect_symlink "dotsdest/.dotfile3" "$TEST_FIELD/normaldir/normalfile"
     _test_expect_symlink "dotsdest/.dotfile4" "$TEST_FIELD/dotsdest/normaldir1"
     _test_expect_symlink "dotsdest/.dotfile5" "$TEST_FIELD/dotsdest/normalfile1"
+    _test_expect_symlink "dotsdest/.dotfile6" "$TEST_FIELD/dotsdest/normaldir1/normalfile1"
 '
 
 _test_run "Remote git repository deploy" '
