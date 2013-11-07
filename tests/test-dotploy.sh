@@ -640,6 +640,10 @@ _test_run "Local file/directory deploy" '
     _test_expect_symlink "dotsdest/.dotfile4" "normaldir1"
     _test_expect_symlink "dotsdest/.dotfile5" "normalfile1"
     _test_expect_symlink "dotsdest/.dotfile6" "normaldir1/normalfile1"
+    output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_unmatch "$output" "Warning: $TEST_FIELD/dotsdest/.dotfile3 already exists, use --force option to force deploying"
+    _test_expect_unmatch "$output" "Warning: $TEST_FIELD/dotsdest/.dotfile4 already exists, use --force option to force deploying"
+    _test_expect_unmatch "$output" "Warning: $TEST_FIELD/dotsdest/.dotfile5 already exists, use --force option to force deploying"
 '
 
 _test_run "Local file/directory deploy with target missing" '
