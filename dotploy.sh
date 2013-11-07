@@ -24,9 +24,7 @@
 #
 #################################################################################
 
-# Build a standalone version
-#
-# export STANDALONE=1
+# @@BASHLIB BEGIN@@
 
 # Function: _abspath
 #
@@ -61,11 +59,12 @@ then
 elif [[ -f /usr/share/lib/bashLib/bashLib ]]
 then
     source "/usr/share/lib/bashLib/bashLib"
-elif [[ -z $STANDALONE ]]
-then
+else
     echo "Can not find bashLib, you need to install it as bundles first."
     exit 1
 fi
+
+# @@BASHLIB END@@
 
 ###############################################################################
 #
