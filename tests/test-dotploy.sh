@@ -622,8 +622,8 @@ _test_run "Local file/directory deploy" '
     echo "$TEST_FIELD/normaldir" >> "dotsrepo/__DOTDIR/.dotfile1.__SRC"
     echo "$TEST_FIELD/normalfile" >> "dotsrepo/__DOTDIR/.dotfile2.__SRC"
     dotploy.sh deploy "dotsrepo" "dotsdest"
-    _test_expect_symlink "dotsdest/.dotfile1" "$TEST_FIELD/normaldir"
-    _test_expect_symlink "dotsdest/.dotfile2" "$TEST_FIELD/normalfile"
+    _test_expect_symlink "dotsdest/.dotfile1" "normaldir"
+    _test_expect_symlink "dotsdest/.dotfile2" "normalfile"
 '
 
 _test_run "Local file/directory deploy with target missing" '
