@@ -331,14 +331,20 @@ _check() {
     repath=${repath#/}
 
     [ -e $DOTSREPO/$repath ] && src=$DOTSREPO/$repath
+    [ -e $DOTSREPO/$repath.__SRC ] && src=$DOTSREPO/$repath.__SRC
     [ -e $DOTSREPO/__USER.$USER/$repath ] && src=$DOTSREPO/__USER.$USER/$repath
+    [ -e $DOTSREPO/__USER.$USER/$repath.__SRC ] && src=$DOTSREPO/__USER.$USER/$repath.__SRC
     [ -e $DOTSREPO/__HOST.$HOST/$repath ] && src=$DOTSREPO/__HOST.$HOST/$repath
+    [ -e $DOTSREPO/__HOST.$HOST/$repath.__SRC ] && src=$DOTSREPO/__HOST.$HOST/$repath.__SRC
     [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
+    [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC
 
     if [ -h $dst ];then
         local csrc=$(readlink -fm $dst)
 
         if [ "$csrc" == "$src" ];then
+            return 0
+        elif [[ $src =~ .*\.__SRC ]] && [[ $csrc == $(get_filepath "$src") ]];then
             return 0
         else
             if [[ $csrc =~ $DOTSHOME ]];then
