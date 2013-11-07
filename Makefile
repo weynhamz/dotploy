@@ -5,6 +5,10 @@ all: bundles/bashLib
 test: bundles/bashTest
 	@prove -v tests/test-dotploy.sh
 
+.PHONY: dev-test
+dev-test:
+	@prove -v tests/test-dotploy.sh
+
 .PHONY: clean
 clean:
 	@rm -f dotploy && rm -rf bundles
