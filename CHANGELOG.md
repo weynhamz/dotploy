@@ -1,3 +1,10 @@
+Version 0.3.2
+-------------
+
+    * Standalone version improvements
+    * Fix checking target deployed from '.__SRC' file
+    * Symlink to a local path, the existence is irrelevant
+
 Version 0.3.1
 -------------
 
