@@ -637,9 +637,9 @@ _test_run "Local file/directory deploy" '
     _test_expect_symlink "dotsdest/.dotfile1" "$TEST_FIELD/normaldir"
     _test_expect_symlink "dotsdest/.dotfile2" "$TEST_FIELD/normalfile"
     _test_expect_symlink "dotsdest/.dotfile3" "$TEST_FIELD/normaldir/normalfile"
-    _test_expect_symlink "dotsdest/.dotfile4" "$TEST_FIELD/dotsdest/normaldir1"
-    _test_expect_symlink "dotsdest/.dotfile5" "$TEST_FIELD/dotsdest/normalfile1"
-    _test_expect_symlink "dotsdest/.dotfile6" "$TEST_FIELD/dotsdest/normaldir1/normalfile1"
+    _test_expect_symlink "dotsdest/.dotfile4" "normaldir1"
+    _test_expect_symlink "dotsdest/.dotfile5" "normalfile1"
+    _test_expect_symlink "dotsdest/.dotfile6" "normaldir1/normalfile1"
 '
 
 _test_run "Local file/directory deploy with target missing" '
@@ -662,9 +662,9 @@ _test_run "Local file/directory deploy with target missing" '
     _test_expect_symlink "dotsdest/.dotfile1" "$TEST_FIELD/normaldir"
     _test_expect_symlink "dotsdest/.dotfile2" "$TEST_FIELD/normalfile"
     _test_expect_symlink "dotsdest/.dotfile3" "$TEST_FIELD/normaldir/normalfile"
-    _test_expect_symlink "dotsdest/.dotfile4" "$TEST_FIELD/dotsdest/normaldir1"
-    _test_expect_symlink "dotsdest/.dotfile5" "$TEST_FIELD/dotsdest/normalfile1"
-    _test_expect_symlink "dotsdest/.dotfile6" "$TEST_FIELD/dotsdest/normaldir1/normalfile1"
+    _test_expect_symlink "dotsdest/.dotfile4" "normaldir1"
+    _test_expect_symlink "dotsdest/.dotfile5" "normalfile1"
+    _test_expect_symlink "dotsdest/.dotfile6" "normaldir1/normalfile1"
 '
 
 _test_run "Remote git repository deploy" '
