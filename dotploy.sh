@@ -263,7 +263,7 @@ ensure_source_git() (
             else
                 #keep the head in sync
                 git fetch origin HEAD
-                echo "$(git rev-parse FETCH_HEAD)" > HEAD
+                echo "$(git rev-parse FETCH_HEAD)" > .git/HEAD
             fi
         fi
     fi
