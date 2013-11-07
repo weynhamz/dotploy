@@ -655,6 +655,8 @@ _test_run "Remote git repository deploy" '
     echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
     dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotfile" "$TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile"
+    output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_unmatch "$output" "Warning: $TEST_FIELD/dotsdest/.dotfile already exists, use --force option to force deploying"
     _git_tear_down
 '
 
