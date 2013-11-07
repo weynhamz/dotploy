@@ -5,6 +5,10 @@ all: bundles/bashLib
 test: bundles/bashTest
 	@prove -v tests/test-dotploy.sh
 
+.PHONY: dev-test
+dev-test:
+	@prove -v tests/test-dotploy.sh
+
 .PHONY: clean
 clean:
 	@rm -f dotploy && rm -rf bundles
@@ -13,7 +17,13 @@ clean:
 standalone: dotploy
 
 dotploy: bundles/bashLib
-	@cat dotploy.sh bundles/bashLib/src/bashLib > dotploy; \
+	@sed -e '1,/# @@BASHLIB BEGIN@@/d' -e '/# @@BASHLIB END@@/,$$d' bundles/bashLib/src/bashLib > bashLib; \
+	 awk ' \
+	     /# @@BASHLIB BEGIN@@/ {system("cat bashLib"); bashlib=1; next} \
+	     /# @@BASHLIB END@@/ {bashlib=0; next} \
+	     bashlib {next} \
+	     {print} \
+	 ' dotploy.sh > dotploy && rm bashLib; \
 	 sed -i 's/# \(export STANDALONE=1\)/\1/g' dotploy; \
 	 sed -i 's/dotploy\.sh/dotploy/g' dotploy; \
 	 chmod a+x dotploy

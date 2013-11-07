@@ -24,9 +24,7 @@
 #
 #################################################################################
 
-# Build a standalone version
-#
-# export STANDALONE=1
+# @@BASHLIB BEGIN@@
 
 # Function: _abspath
 #
@@ -61,11 +59,12 @@ then
 elif [[ -f /usr/share/lib/bashLib/bashLib ]]
 then
     source "/usr/share/lib/bashLib/bashLib"
-elif [[ -z $STANDALONE ]]
-then
+else
     echo "Can not find bashLib, you need to install it as bundles first."
     exit 1
 fi
+
+# @@BASHLIB END@@
 
 ###############################################################################
 #
@@ -283,10 +282,7 @@ ensure_source_local() (
     local src=$(get_src "$1")
     local url=$(get_url "$src")
 
-    [ -e $url ] || {
-        printe "Target $url does not exist"
-        exit 1
-    }
+    true
 )
 
 #
@@ -335,14 +331,20 @@ _check() {
     repath=${repath#/}
 
     [ -e $DOTSREPO/$repath ] && src=$DOTSREPO/$repath
+    [ -e $DOTSREPO/$repath.__SRC ] && src=$DOTSREPO/$repath.__SRC
     [ -e $DOTSREPO/__USER.$USER/$repath ] && src=$DOTSREPO/__USER.$USER/$repath
+    [ -e $DOTSREPO/__USER.$USER/$repath.__SRC ] && src=$DOTSREPO/__USER.$USER/$repath.__SRC
     [ -e $DOTSREPO/__HOST.$HOST/$repath ] && src=$DOTSREPO/__HOST.$HOST/$repath
+    [ -e $DOTSREPO/__HOST.$HOST/$repath.__SRC ] && src=$DOTSREPO/__HOST.$HOST/$repath.__SRC
     [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
+    [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC
 
     if [ -h $dst ];then
-        local csrc=$(readlink -fm $dst)
+        local csrc=$(readlink $dst)
 
         if [ "$csrc" == "$src" ];then
+            return 0
+        elif [[ $src =~ .*\.__SRC ]] && [[ $csrc == $(get_filepath "$src") ]];then
             return 0
         else
             if [[ $csrc =~ $DOTSHOME ]];then
