@@ -340,7 +340,7 @@ _check() {
     [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC
 
     if [ -h $dst ];then
-        local csrc=$(readlink -fm $dst)
+        local csrc=$(readlink $dst)
 
         if [ "$csrc" == "$src" ];then
             return 0
