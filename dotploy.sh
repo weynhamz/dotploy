@@ -282,10 +282,7 @@ ensure_source_local() (
     local src=$(get_src "$1")
     local url=$(get_url "$src")
 
-    [ -e $url ] || {
-        printe "Target $url does not exist"
-        exit 1
-    }
+    true
 )
 
 #
