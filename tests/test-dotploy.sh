@@ -416,11 +416,11 @@ _test_run "Whether __IGNORE works as expected" '
     _test_expect_missing "dotsdest/file4"
     _test_expect_symlink "dotsdest/.dotdir1"  "dotsrepo/__DOTDIR/.dotdir1"
     _test_expect_symlink "dotsdest/.dotfile1" "dotsrepo/__DOTDIR/.dotfile1"
-    _test_expect_symlink "dotsdest/.dotdir2"  "dotsrepo/__DOTDIR/__USER.$USER/.dotdir2/"
+    _test_expect_symlink "dotsdest/.dotdir2"  "dotsrepo/__DOTDIR/__USER.$USER/.dotdir2"
     _test_expect_symlink "dotsdest/.dotfile2" "dotsrepo/__DOTDIR/__USER.$USER/.dotfile2"
-    _test_expect_symlink "dotsdest/.dotdir3"  "dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir3/"
+    _test_expect_symlink "dotsdest/.dotdir3"  "dotsrepo/__DOTDIR/__HOST.$HOST/.dotdir3"
     _test_expect_symlink "dotsdest/.dotfile3" "dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile3"
-    _test_expect_symlink "dotsdest/.dotdir4"  "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir4/"
+    _test_expect_symlink "dotsdest/.dotdir4"  "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotdir4"
     _test_expect_symlink "dotsdest/.dotfile4" "dotsrepo/__DOTDIR/__HOST.$HOST/__USER.$USER/.dotfile4"
 '
 
@@ -613,7 +613,7 @@ _test_run "Use __IGNORE ignore directory contains __KEEPED" '
 
 _test_run "Local file/directory deploy" '
     repo_layer=(
-        "normaldir"
+        "normaldir/"
         "normalfile"
         "dotsrepo/__DOTDIR/.dotfile1.__SRC"
         "dotsrepo/__DOTDIR/.dotfile2.__SRC"
