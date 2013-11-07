@@ -687,7 +687,7 @@ _test_run "Remote git repository deploy with a wrong existing repo" '
     _git_tear_down
 '
 
-_test_run "Remote git repository deploy with an existing repo" '
+_test_run "Remote git repository deploy with a dead-upstream existing repo" '
     _git_set_up
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
