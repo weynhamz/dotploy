@@ -1,3 +1,8 @@
+Version 0.3.3
+-------------
+
+    * Hotfix: Fix the wrong HEAD file location
+
 Version 0.3.2
 -------------
 
