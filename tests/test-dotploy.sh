@@ -292,7 +292,7 @@ _test_run "Fallback host and user based deployment to host based" '
     _test_expect_symlink "dotsdest/.dotfile" "$TEST_FIELD/dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile"
 '
 
-_test_run "Fallback host and user based deployment to host based when __USER and __HOST both their" '
+_test_run "Fallback host and user based deployment to host based when __USER and __HOST both there" '
     repo_layer=(
         "dotsrepo/__DOTDIR/__USER.$USER/.dotdir/"
         "dotsrepo/__DOTDIR/__USER.$USER/.dotfile"

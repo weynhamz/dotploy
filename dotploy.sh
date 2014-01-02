@@ -198,10 +198,10 @@ get_fragment() {
         if [[ $target = ref ]]; then
             if [[ $fragment =~ tag=* ]]; then
                 echo $fragment | sed 's/.*tag=\([^&]*\).*/\1/g'
-            elif [[ $fragment =~ commit=* ]]; then
-                echo $fragment | sed 's/.*commit=\([^&]*\).*/\1/g'
             elif [[ $fragment =~ branch=* ]]; then
                 echo $fragment | sed 's/.*branch=\([^&]*\).*/\1/g'
+            elif [[ $fragment =~ commit=* ]]; then
+                echo $fragment | sed 's/.*commit=\([^&]*\).*/\1/g'
             fi
         elif [[ $target = file ]]; then
             if [[ $fragment =~ file=* ]]; then
@@ -261,7 +261,7 @@ ensure_source_git() (
             if ! git fetch --all --prune; then
                 printw "Failed to fetch upstream ..."
             else
-                #keep the head in sync
+                #keep the head in sync with the remote
                 git fetch origin HEAD
                 echo "$(git rev-parse FETCH_HEAD)" > .git/HEAD
             fi
@@ -301,7 +301,7 @@ _prune() {
         _check $file
 
         [ $? -eq 1 ] && {
-            print $'UPDATE:\t'"$file"
+            print 'UPDATE:'$'\t'"$file"
             print "$(rm -v $file)"
         }
     done
@@ -382,7 +382,7 @@ _deploy() {
     local dstdir=$2
 
     DEPTH=$(( $DEPTH + 1 ))
-    print $'ENTER:\t'"$dotdir"
+    print 'ENTER:'$'\t'"$dotdir"
 
     local filelist=$(ls -1A --color=none $dotdir)
 
@@ -419,7 +419,7 @@ _deploy() {
         [ $? -ne 0 ] && echo "$dstdir/$file" >> $LOGFILE
     done
 
-    print $'LEAVE:\t'"$dotdir"
+    print 'LEAVE:'$'\t'"$dotdir"
     DEPTH=$(( $DEPTH - 1 ))
 }
 
@@ -461,7 +461,7 @@ _symlink() {
     [ -n "$repath" ] && {
         # backup if the target already exits
         [ -f "$DESTHOME/$repath" ] && {
-            print $'BACKUP:\t'"$DESTHOME/$repath"
+            print 'BACKUP:'$'\t'"$DESTHOME/$repath"
             DEPTH=$(( $DEPTH + 1 ))
             print "$(mkdir -vp $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
             DEPTH=$(( $DEPTH - 1 ))
@@ -478,7 +478,7 @@ _symlink() {
 
     # remove broken link
     [ $status -eq 1 ] && {
-        print $'REMOVE:\t'"$dst"
+        print 'REMOVE:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(rm -v $dst)"
         DEPTH=$(( $DEPTH - 1 ))
@@ -487,7 +487,7 @@ _symlink() {
     # backup existed file
     [ $status -eq 2 ] && {
         [ $FORCE = 1 ] && {
-            print $'BACKUP:\t'"$dst"
+            print 'BACKUP:'$'\t'"$dst"
             DEPTH=$(( $DEPTH + 1 ))
             print "$(mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
             DEPTH=$(( $DEPTH - 1 ))
@@ -499,7 +499,7 @@ _symlink() {
 
     # symlink the file in the repo
     [ $status -ne 0 ] && [ $status -ne 4 ] && {
-        print $'SYMLINK:\t'"$dst"
+        print 'LINK:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(ln -v -s $src $dst)"
         DEPTH=$(( $DEPTH - 1 ))
