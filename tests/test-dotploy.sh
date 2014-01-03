@@ -684,6 +684,19 @@ _test_run "Remote git repository deploy" '
     _test_expect_unmatch "$output" "Warning: $TEST_FIELD/dotsdest/.dotfile already exists, use --force option to force deploying"
 '
 
+_test_run "Remote git repository deploy with differnt HEAD" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
+    _git_checkout develop
+    dotploy.sh deploy "dotsrepo" "dotsdest"
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test.dotfile;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+'
+
 _test_run "Remote git repository deploy with wrong repo url" '
     _git_set_up
     repo_layer=(
