@@ -9,7 +9,7 @@
 _abspath() {
     local path=${1:-$(caller | cut -d' ' -f2)}
     local path_dir=$( dirname "$path" )
-    while [ -h "$path" ]
+    while [[ -h "$path" ]]
     do
         path=$(readlink "$path")
         [[ $path != /* ]] && path=$path_dir/$path

@@ -35,7 +35,7 @@
 _abspath() {
     local path=${1:-$(caller | cut -d' ' -f2)}
     local path_dir=$( dirname "$path" )
-    while [ -h "$path" ]
+    while [[ -h "$path" ]]
     do
         path=$(readlink "$path")
         [[ $path != /* ]] && path=$path_dir/$path
@@ -97,15 +97,15 @@ IGNORE=(
 )
 
 print() {
-    [ $VERBOSE -eq 1 ] && [ -n "$1" ] && echo "$1" | sed "s/^/$(printf '|%.0s' $(seq 1 $DEPTH))\t/g"
+    [[ $VERBOSE -eq 1 ]] && [[ -n "$1" ]] && echo "$1" | sed "s/^/$(printf '|%.0s' $(seq 1 $DEPTH))\t/g"
 }
 
 printe() {
-    [ -n "$1" ] && echo "ERROR: $1" >&2
+    [[ -n "$1" ]] && echo "ERROR: $1" >&2
 }
 
 printw() {
-    [ -n "$1" ] && echo "Warning: $1" >&2
+    [[ -n "$1" ]] && echo "Warning: $1" >&2
 }
 
 # Abtain the record to the source
@@ -288,7 +288,7 @@ ensure_source_git() (
     _cd "$dir"
 
     local ref=$(get_fragment "$src"  "ref")
-    if [[ -n $ref ]
+    if [[ -n $ref ]]
     then
         if ! git checkout $ref &>/dev/null
         then
@@ -319,7 +319,7 @@ _prune() {
     for file in $(cat $logfile); do
         _check $file
 
-        [ $? -eq 1 ] && {
+        [[ $? -eq 1 ]] && {
             print 'UPDATE:'$'\t'"$file"
             print "$(rm -v $file)"
         }
@@ -349,20 +349,20 @@ _check() {
     repath=${dst#$DESTHOME}
     repath=${repath#/}
 
-    [ -e $DOTSREPO/$repath ] && src=$DOTSREPO/$repath
-    [ -e $DOTSREPO/$repath.__SRC ] && src=$DOTSREPO/$repath.__SRC
-    [ -e $DOTSREPO/__USER.$USER/$repath ] && src=$DOTSREPO/__USER.$USER/$repath
-    [ -e $DOTSREPO/__USER.$USER/$repath.__SRC ] && src=$DOTSREPO/__USER.$USER/$repath.__SRC
-    [ -e $DOTSREPO/__HOST.$HOST/$repath ] && src=$DOTSREPO/__HOST.$HOST/$repath
-    [ -e $DOTSREPO/__HOST.$HOST/$repath.__SRC ] && src=$DOTSREPO/__HOST.$HOST/$repath.__SRC
-    [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
-    [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC
+    [[ -e $DOTSREPO/$repath ]] && src=$DOTSREPO/$repath
+    [[ -e $DOTSREPO/$repath.__SRC ]] && src=$DOTSREPO/$repath.__SRC
+    [[ -e $DOTSREPO/__USER.$USER/$repath ]] && src=$DOTSREPO/__USER.$USER/$repath
+    [[ -e $DOTSREPO/__USER.$USER/$repath.__SRC ]] && src=$DOTSREPO/__USER.$USER/$repath.__SRC
+    [[ -e $DOTSREPO/__HOST.$HOST/$repath ]] && src=$DOTSREPO/__HOST.$HOST/$repath
+    [[ -e $DOTSREPO/__HOST.$HOST/$repath.__SRC ]] && src=$DOTSREPO/__HOST.$HOST/$repath.__SRC
+    [[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ]] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
+    [[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC ]] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC
 
-    if [ -h $dst ]
+    if [[ -h $dst ]]
     then
         local csrc=$(readlink $dst)
 
-        if [ "$csrc" == "$src" ]
+        if [[ "$csrc" == "$src" ]]
         then
             return 0
         elif [[ $src =~ .*\.__SRC ]] && [[ $csrc == $(get_filepath "$src") ]]
@@ -376,15 +376,15 @@ _check() {
                 return 2
             fi
         fi
-    elif [ -d $dst ]
+    elif [[ -d $dst ]]
     then
-        if [ -f $src/__KEEPED ]
+        if [[ -f $src/__KEEPED ]]
         then
             return 4
         else
             return 2
         fi
-    elif [ -f $dst ]
+    elif [[ -f $dst ]]
     then
         return 2
     else
@@ -421,7 +421,7 @@ _deploy() {
         done
 
         # apply user-defined ignoring rules
-        if [ -f $dotdir/__IGNORE ]
+        if [[ -f $dotdir/__IGNORE ]]
         then
             local line
             for line in $(cat $dotdir/__IGNORE);do
@@ -429,9 +429,9 @@ _deploy() {
             done
         fi
 
-        if [ -d $dotdir/$file ]
+        if [[ -d $dotdir/$file ]]
         then
-            if [ -e $dotdir/$file/__KEEPED ]
+            if [[ -e $dotdir/$file/__KEEPED ]]
             then
                 # this directory needs to be kept,
                 # deploy its contents.
@@ -439,14 +439,14 @@ _deploy() {
             else
                 _symlink $dotdir $dstdir $file
             fi
-        elif [ -f $dotdir/$file ]
+        elif [[ -f $dotdir/$file ]]
         then
             _symlink $dotdir $dstdir $file
         fi
 
         grep "^$dstdir/$file\$" $LOGFILE >/dev/null 2>&1
 
-        [ $? -ne 0 ] && echo "$dstdir/$file" >> $LOGFILE
+        [[ $? -ne 0 ]] && echo "$dstdir/$file" >> $LOGFILE
     done
 
     print 'LEAVE:'$'\t'"$dotdir"
@@ -488,9 +488,9 @@ _symlink() {
     repath=${repath#/}
 
     # for nested path, need to mkdir parent first
-    [ -n "$repath" ] && {
+    [[ -n "$repath" ]] && {
         # backup if the target already exits
-        [ -f "$DESTHOME/$repath" ] && {
+        [[ -f "$DESTHOME/$repath" ]] && {
             print 'BACKUP:'$'\t'"$DESTHOME/$repath"
             DEPTH=$(( $DEPTH + 1 ))
             print "$(mkdir -vp $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
@@ -507,7 +507,7 @@ _symlink() {
     local status=$?
 
     # remove broken link
-    [ $status -eq 1 ] && {
+    [[ $status -eq 1 ]] && {
         print 'REMOVE:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(rm -v $dst)"
@@ -515,8 +515,8 @@ _symlink() {
     }
 
     # backup existed file
-    [ $status -eq 2 ] && {
-        [ $FORCE = 1 ] && {
+    [[ $status -eq 2 ]] && {
+        [[ $FORCE = 1 ]] && {
             print 'BACKUP:'$'\t'"$dst"
             DEPTH=$(( $DEPTH + 1 ))
             print "$(mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
@@ -528,7 +528,7 @@ _symlink() {
     }
 
     # symlink the file in the repo
-    [ $status -ne 0 ] && [ $status -ne 4 ] && {
+    [[ $status -ne 0 ]] && [[ $status -ne 4 ]] && {
         print 'LINK:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(ln -v -s $src $dst)"
@@ -604,49 +604,49 @@ dodeploy() {
     LOGFILE=$CONFDIR/filelog
 
     # transform old backup sctruction to the new one
-    [ -d $DOTSHOME/__BACKUP/$HOST ] && {
+    [[ -d $DOTSHOME/__BACKUP/$HOST ]] && {
         echo "Performing transition ..."
 
-        [ -f $LOGFILE ] && mv $LOGFILE $LOGFILE.bak
+        [[ -f $LOGFILE ]] && mv $LOGFILE $LOGFILE.bak
         for bakpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | sed 's-/DESTHOME$--g');do
             mv $bakpath/dotploy.log $LOGFILE &>/dev/null
 
-            [ -f $bakpath/dotploy.log ] && {
+            [[ -f $bakpath/dotploy.log ]] && {
                 echo error
                 continue
             }
 
             rm $bakpath/DESTHOME &>/dev/null
 
-            [ -f $bakpath/DESTHOME ] && {
+            [[ -f $bakpath/DESTHOME ]] && {
                 echo error
                 continue
             }
 
             rmdir $bakpath &> /dev/null || mv $bakpath $CONFDIR/backup
         done
-        [ -f $LOGFILE.bak ] && mv $LOGFILE.bak $LOGFILE
+        [[ -f $LOGFILE.bak ]] && mv $LOGFILE.bak $LOGFILE
 
         rmdir --ignore-fail-on-non-empty -p $DOTSHOME/__BACKUP/$HOST
 
         echo "Transition done."
     }
 
-    if [ -f $LOGFILE ]
+    if [[ -f $LOGFILE ]]
     then
         _prune $LOGFILE
     fi
 
     # host user based dotfies deploy
-    [ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
+    [[ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ]] && \
         _deploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
 
     # host based dotfies deploy
-    [ -d $DOTSREPO/__HOST.$HOST ] && \
+    [[ -d $DOTSREPO/__HOST.$HOST ]] && \
         _deploy $DOTSREPO/__HOST.$HOST $DESTHOME
 
     # user based dotfies deploy
-    [ -d $DOTSREPO/__USER.$USER ] && \
+    [[ -d $DOTSREPO/__USER.$USER ]] && \
         _deploy $DOTSREPO/__USER.$USER $DESTHOME
 
     # shared dotfiles deploy
@@ -701,7 +701,7 @@ declare -i FORCE=0
 declare -i INUSER=0
 declare -i INHOST=0
 declare -i VERBOSE=0
-while [ $# -gt 0 ]
+while [[ $# -gt 0 ]]
 do
     case "$1" in
         --user )
@@ -760,21 +760,21 @@ case "$ACTION" in
         ;;
 esac
 
-[ -f "$HOME/.dotploy/config" ] && source $HOME/.dotploy/config
+[[ -f "$HOME/.dotploy/config" ]] && source $HOME/.dotploy/config
 
 DOTSHOME=$(realpath ${1:-$DOTSHOME})
 
 # make sure our destination is there
-[ -d $DOTSHOME ] || die "$DOTSHOME is not available"
+[[ -d $DOTSHOME ]] || die "$DOTSHOME is not available"
 
 DOTSREPO=$DOTSHOME/__DOTDIR
 
 # die if it is not a dotsrepo
-[ -d $DOTSREPO ] || die "$DOTSREPO is not available"
+[[ -d $DOTSREPO ]] || die "$DOTSREPO is not available"
 
 DESTHOME=$(realpath ${2:-${DESTHOME:-$HOME}})
 
 # make sure our destination is there
-[ -d $DESTHOME ] || die "$DESTHOME is not available"
+[[ -d $DESTHOME ]] || die "$DESTHOME is not available"
 
 do$ACTION
