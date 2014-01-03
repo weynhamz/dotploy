@@ -76,6 +76,18 @@ _git_has_local_change() {
     ! git diff-index --quiet --exit-code HEAD
 }
 
+_git_is_head_detached() {
+    ! git symbolic-ref HEAD &>/dev/null
+}
+
+_git_is_head_in_remote() {
+    [[ -n "$(git branch -r --contains HEAD)" ]]
+}
+
+_git_is_head_tracking_remote() {
+    git rev-parse --abbrev-ref @{u} &>/dev/null
+}
+
 ###############################################################################
 #
 # Main Program
@@ -313,7 +325,7 @@ ensure_source_git() (
 
     if [[ $(git rev-parse HEAD) != $(git rev-parse $ref) ]]
     then
-        if _git_has_local_change
+        if _git_has_local_change || { _git_is_head_detached && ! _git_is_head_in_remote; } || { _git_is_head_tracking_remote && ! _git_is_head_in_remote; }
         then
             printw "Our clone of the repository $(pwd) has local changes, abort further operation, please resolve first."
         else
