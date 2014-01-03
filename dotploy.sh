@@ -303,7 +303,10 @@ ensure_source_git() (
         fi
     else
         #keep the head in sync with the remote
-        echo "$(git rev-parse refs/remotes/origin/HEAD)" > .git/HEAD
+        if ! git checkout --quiet refs/remotes/origin/HEAD
+        then
+            printw "Unable to keep HEAD in sync with remote"
+        fi
     fi
 )
 
