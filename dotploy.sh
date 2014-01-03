@@ -128,7 +128,8 @@ get_url() {
 
 # extract the protocol from a source entry - return "local" for local sources
 get_protocol() {
-    if [[ $1 = *://* ]]; then
+    if [[ $1 = *://* ]]
+    then
         # strip leading filename
         local proto="${1##*::}"
         printf "%s\n" "${proto%%://*}"
@@ -142,7 +143,8 @@ get_filename() {
     local src=$1
 
     # if a filename is specified, use it
-    if [[ $src = *::* ]]; then
+    if [[ $src = *::* ]]
+    then
         printf "%s\n" ${src%%::*}
         return
     fi
@@ -153,7 +155,8 @@ get_filename() {
             filename=${src%%#*}
             filename=${filename%/}
             filename=${filename##*/}
-            if [[ $proto = git* ]]; then
+            if [[ $proto = git* ]]
+            then
                 filename=${filename%%.git*}
             fi
             ;;
@@ -173,7 +176,8 @@ get_filepath() {
     local proto=$(get_protocol "$src")
     case "$proto" in
         git*)
-            if [[ -n $file ]]; then
+            if [[ -n $file ]]
+            then
                 echo $(get_dir "$1")/$file
             else
                 echo $(get_dir "$1")
@@ -190,21 +194,29 @@ get_fragment() {
     local target=$2
     local fragment=${url#*#}
 
-    if [[ $fragment = "$url" ]]; then
+    if [[ $fragment = "$url" ]]
+    then
         return
     fi
 
-    if [[ -n $fragment ]]; then
-        if [[ $target = ref ]]; then
-            if [[ $fragment =~ tag=* ]]; then
+    if [[ -n $fragment ]]
+    then
+        if [[ $target = ref ]]
+        then
+            if [[ $fragment =~ tag=* ]]
+            then
                 echo $fragment | sed 's/.*tag=\([^&]*\).*/\1/g'
-            elif [[ $fragment =~ branch=* ]]; then
+            elif [[ $fragment =~ branch=* ]]
+            then
                 echo $fragment | sed 's/.*branch=\([^&]*\).*/\1/g'
-            elif [[ $fragment =~ commit=* ]]; then
+            elif [[ $fragment =~ commit=* ]]
+            then
                 echo $fragment | sed 's/.*commit=\([^&]*\).*/\1/g'
             fi
-        elif [[ $target = file ]]; then
-            if [[ $fragment =~ file=* ]]; then
+        elif [[ $target = file ]]
+        then
+            if [[ $fragment =~ file=* ]]
+            then
                 echo $fragment | sed 's/.*file=\([^&]*\).*/\1/g'
             fi
         fi
@@ -240,8 +252,10 @@ ensure_source_git() (
     url=${url##*file:\/\/}
     url=${url%%#*}
 
-    if [[ ! -d "$dir" ]] || _is_dir_empty "$dir" ; then
-        if ! git clone "$url" "$dir" &>/dev/null; then
+    if [[ ! -d "$dir" ]] || _is_dir_empty "$dir"
+    then
+        if ! git clone "$url" "$dir" &>/dev/null
+        then
             printe "Failed to clone repository $url ..."
             exit 1
         fi
@@ -249,16 +263,19 @@ ensure_source_git() (
         _cd "$dir"
 
         # Make sure we are fetching the right repo
-        if [[ "$url" != "$(git config --get remote.origin.url)" ]] ; then
+        if [[ "$url" != "$(git config --get remote.origin.url)" ]]
+        then
             printw "We are not in right repo, backup the existed repo to $BAKPATH"
             _cd ..
             mkdir -p $BAKPATH && mv $dir $BAKPATH
-            if ! git clone "$url" "$dir" &>/dev/null; then
+            if ! git clone "$url" "$dir" &>/dev/null
+            then
                 printe "Failed to clone repository $url ..."
                 exit 1
             fi
         else
-            if ! git fetch --all --prune; then
+            if ! git fetch --all --prune
+            then
                 printw "Failed to fetch upstream ..."
             else
                 #keep the head in sync with the remote
@@ -271,8 +288,10 @@ ensure_source_git() (
     _cd "$dir"
 
     local ref=$(get_fragment "$src"  "ref")
-    if [[ -n $ref ]]; then
-        if ! git checkout $ref &>/dev/null; then
+    if [[ -n $ref ]
+    then
+        if ! git checkout $ref &>/dev/null
+        then
             printw "Unable to checkout the requested reference"
         fi
     fi
@@ -339,27 +358,34 @@ _check() {
     [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
     [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC
 
-    if [ -h $dst ];then
+    if [ -h $dst ]
+    then
         local csrc=$(readlink $dst)
 
-        if [ "$csrc" == "$src" ];then
+        if [ "$csrc" == "$src" ]
+        then
             return 0
-        elif [[ $src =~ .*\.__SRC ]] && [[ $csrc == $(get_filepath "$src") ]];then
+        elif [[ $src =~ .*\.__SRC ]] && [[ $csrc == $(get_filepath "$src") ]]
+        then
             return 0
         else
-            if [[ $csrc =~ $DOTSHOME ]];then
+            if [[ $csrc =~ $DOTSHOME ]]
+            then
                 return 1
             else
                 return 2
             fi
         fi
-    elif [ -d $dst ];then
-        if [ -f $src/__KEEPED ];then
+    elif [ -d $dst ]
+    then
+        if [ -f $src/__KEEPED ]
+        then
             return 4
         else
             return 2
         fi
-    elif [ -f $dst ];then
+    elif [ -f $dst ]
+    then
         return 2
     else
         return 3
@@ -395,22 +421,26 @@ _deploy() {
         done
 
         # apply user-defined ignoring rules
-        if [ -f $dotdir/__IGNORE ]; then
+        if [ -f $dotdir/__IGNORE ]
+        then
             local line
             for line in $(cat $dotdir/__IGNORE);do
                 [[ $file =~ $line ]] && continue 2
             done
         fi
 
-        if [ -d $dotdir/$file ]; then
-            if [ -e $dotdir/$file/__KEEPED ];then
+        if [ -d $dotdir/$file ]
+        then
+            if [ -e $dotdir/$file/__KEEPED ]
+            then
                 # this directory needs to be kept,
                 # deploy its contents.
                 _deploy $dotdir/$file $dstdir/$file
             else
                 _symlink $dotdir $dstdir $file
             fi
-        elif [ -f $dotdir/$file ]; then
+        elif [ -f $dotdir/$file ]
+        then
             _symlink $dotdir $dstdir $file
         fi
 
@@ -513,13 +543,17 @@ doadd() {
     local rpath=${TARGET##$DESTHOME/}
 
     local dest
-    if [[ $INHOST == 0 ]] && [[ $INUSER == 0 ]];then
+    if [[ $INHOST == 0 ]] && [[ $INUSER == 0 ]]
+    then
         dest=$DOTSREPO
-    elif [[ $INHOST == 1 ]] && [[ $INUSER == 0 ]];then
+    elif [[ $INHOST == 1 ]] && [[ $INUSER == 0 ]]
+    then
         dest=$DOTSREPO/__HOST.$HOST
-    elif [[ $INHOST == 0 ]] && [[ $INUSER == 1 ]];then
+    elif [[ $INHOST == 0 ]] && [[ $INUSER == 1 ]]
+    then
         dest=$DOTSREPO/__USER.$USER
-    elif [[ $INHOST == 1 ]] && [[ $INUSER == 1 ]];then
+    elif [[ $INHOST == 1 ]] && [[ $INUSER == 1 ]]
+    then
         dest=$DOTSREPO/__HOST.$HOST/__USER.$USER
     fi
 
@@ -598,7 +632,8 @@ dodeploy() {
         echo "Transition done."
     }
 
-    if [ -f $LOGFILE ];then
+    if [ -f $LOGFILE ]
+    then
         _prune $LOGFILE
     fi
 
