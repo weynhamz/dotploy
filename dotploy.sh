@@ -295,17 +295,19 @@ ensure_source_git() (
     _cd "$dir"
 
     local ref=$(get_fragment "$src"  "ref")
-    if [[ -n $ref ]]
+    if [[ -z $ref ]]
     then
-        if ! git checkout --quiet $ref
-        then
-            printw "Unable to checkout the requested reference"
-        fi
-    else
         #keep the head in sync with the remote
-        if ! git checkout --quiet refs/remotes/origin/HEAD
+        ref=refs/remotes/origin/HEAD
+    fi
+
+    if ! git checkout $ref &>/dev/null
+    then
+        if [[ $ref == "refs/remotes/origin/HEAD" ]]
         then
             printw "Unable to keep HEAD in sync with remote"
+        else
+            printw "Unable to checkout requested reference"
         fi
     fi
 )
