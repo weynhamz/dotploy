@@ -697,6 +697,36 @@ _test_run "Remote git repository deploy with differnt HEAD" '
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test.dotfile;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
 '
 
+_test_run "Remote git repository deploy with different HEAD and local changes" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
+    _git_checkout develop
+    # local has unstaged chagnes
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile1
+        rm 1
+    )
+    # local has staged chagnes
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile2
+        git rm 1
+    )
+    output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile1 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_false "test $(cd dotsdest/.dotploy/vcs/test.dotfile1;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+    _test_expect_match "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile2 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_false "test $(cd dotsdest/.dotploy/vcs/test.dotfile2;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+'
+
 _test_run "Remote git repository deploy with wrong repo url" '
     _git_set_up
     repo_layer=(

@@ -68,6 +68,16 @@ fi
 
 ###############################################################################
 #
+# Git Wrappers
+#
+###############################################################################
+
+_git_has_local_change() {
+    ! git diff-index --quiet --exit-code HEAD
+}
+
+###############################################################################
+#
 # Main Program
 #
 ###############################################################################
@@ -303,13 +313,18 @@ ensure_source_git() (
 
     if [[ $(git rev-parse HEAD) != $(git rev-parse $ref) ]]
     then
-        if ! git checkout $ref &>/dev/null
+        if _git_has_local_change
         then
-            if [[ $ref == "refs/remotes/origin/HEAD" ]]
+            printw "Our clone of the repository $(pwd) has local changes, abort further operation, please resolve first."
+        else
+            if ! git checkout $ref &>/dev/null
             then
-                printw "Unable to keep HEAD in sync with remote"
-            else
-                printw "Unable to checkout requested reference"
+                if [[ $ref == "refs/remotes/origin/HEAD" ]]
+                then
+                    printw "Unable to keep HEAD in sync with remote"
+                else
+                    printw "Unable to checkout requested reference"
+                fi
             fi
         fi
     fi
