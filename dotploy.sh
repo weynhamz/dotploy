@@ -273,6 +273,8 @@ ensure_source_git() (
         if ( _cd "$dir" && ! git fetch --all --prune --quiet )
         then
             printw "Failed to fetch upstream '$url' in '$dir'."
+        else
+            ( _cd "$dir" && git remote set-head origin -a &>/dev/null )
         fi
     # Otherwise, backup and remove any existed invalid file/directory occupied the target
     # location before the clone
@@ -301,8 +303,7 @@ ensure_source_git() (
         fi
     else
         #keep the head in sync with the remote
-        git fetch --quiet origin HEAD
-        echo "$(git rev-parse FETCH_HEAD)" > .git/HEAD
+        echo "$(git rev-parse refs/remotes/origin/HEAD)" > .git/HEAD
     fi
 )
 
