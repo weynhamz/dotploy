@@ -682,7 +682,6 @@ _test_run "Remote git repository deploy" '
     _test_expect_symlink "dotsdest/.dotfile" "$TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile"
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     _test_expect_unmatch "$output" "Warning: $TEST_FIELD/dotsdest/.dotfile already exists, use --force option to force deploying"
-    _git_tear_down
 '
 
 _test_run "Remote git repository deploy with wrong repo url" '
@@ -695,7 +694,6 @@ _test_run "Remote git repository deploy with wrong repo url" '
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     _test_expect_match "$output" "ERROR: Failed to clone repository $TEST_FIELD/test1.git ..."
     _test_expect_missing "dotsdest/.dotfile"
-    _git_tear_down
 '
 
 _test_run "Remote git repository deploy with a wrong existing repo" '
@@ -716,7 +714,6 @@ _test_run "Remote git repository deploy with a wrong existing repo" '
     bakdir=dotsdest/.dotploy/backup/$(ls -1 --color=none dotsdest/.dotploy/backup)
     _test_expect_match "$output" "Warning: We are not in right repo, backup the existed repo to $TEST_FIELD/$bakdir"
     _test_expect_directory $bakdir/test.dotfile
-    _git_tear_down
 '
 
 _test_run "Remote git repository deploy with a dead-upstream existing repo" '
@@ -734,7 +731,6 @@ _test_run "Remote git repository deploy with a dead-upstream existing repo" '
     rm -rf $TEST_FIELD/test.git
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     _test_expect_match "$output" "Failed to fetch upstream ..."
-    _git_tear_down
 '
 
 _test_run "Remote git repository deploy with reference specified" '
@@ -766,7 +762,6 @@ _test_run "Remote git repository deploy with reference specified" '
     _test_expect_symlink "dotsdest/.dotfile4" "$TEST_FIELD/dotsdest/.dotploy/vcs/test4.dotfile4/5/6"
     _test_expect_symlink "dotsdest/.dotfile5" "$TEST_FIELD/dotsdest/.dotploy/vcs/test5.dotfile5/7/8"
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test5.dotfile5;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
-    _git_tear_down
 '
 
 _test_run "Add given file to the dots repo" '
