@@ -705,11 +705,29 @@ _test_run "Remote git repository deploy with wrong repo url" '
     _make_layer "${repo_layer[@]}"
     echo "git+file://$TEST_FIELD/test1.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
-    _test_expect_match "$output" "ERROR: Failed to clone repository $TEST_FIELD/test1.git ..."
+    _test_expect_match "$output" "ERROR: Failed to clone repository '\''$TEST_FIELD/test1.git'\'' to '\''$TEST_FIELD/dotsdest/.dotploy/vcs/test1.dotfile'\''."
     _test_expect_missing "dotsdest/.dotfile"
 '
 
-_test_run "Remote git repository deploy with a wrong existing repo" '
+_test_run "Remote git repository deploy with the location to be cloned to exists" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    (
+        mkdir -p dotsdest/.dotploy/vcs/
+        cd dotsdest/.dotploy/vcs/
+        touch test.dotfile
+    )
+    output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    bakdir=dotsdest/.dotploy/backup/$(ls -1 --color=none dotsdest/.dotploy/backup)
+    _test_expect_match "$output" "Warning: '\''$TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile'\'' is already there, backup to '\''$TEST_FIELD/$bakdir'\''."
+    _test_expect_exists $bakdir/test.dotfile
+'
+
+_test_run "Remote git repository deploy with the existing repo upstream incorrect" '
     _git_set_up
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
@@ -725,11 +743,11 @@ _test_run "Remote git repository deploy with a wrong existing repo" '
     )
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     bakdir=dotsdest/.dotploy/backup/$(ls -1 --color=none dotsdest/.dotploy/backup)
-    _test_expect_match "$output" "Warning: We are not in right repo, backup the existed repo to $TEST_FIELD/$bakdir"
+    _test_expect_match "$output" "Warning: '\''$TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile'\'' is already there, backup to '\''$TEST_FIELD/$bakdir'\''."
     _test_expect_directory $bakdir/test.dotfile
 '
 
-_test_run "Remote git repository deploy with a dead-upstream existing repo" '
+_test_run "Remote git repository deploy with the existing repo upstream being dead" '
     _git_set_up
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
@@ -743,7 +761,7 @@ _test_run "Remote git repository deploy with a dead-upstream existing repo" '
     )
     rm -rf $TEST_FIELD/test.git
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
-    _test_expect_match "$output" "Failed to fetch upstream ..."
+    _test_expect_match "$output" "Warning: Failed to fetch upstream '\''$TEST_FIELD/test.git'\'' in '\''$TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile'\''."
 '
 
 _test_run "Remote git repository deploy with reference specified" '

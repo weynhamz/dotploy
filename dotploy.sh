@@ -267,32 +267,26 @@ ensure_source_git() (
     url=${url##*file:\/\/}
     url=${url%%#*}
 
-    if [[ ! -d "$dir" ]] || _is_dir_empty "$dir"
+    # Fetch the remote update if we have it cloned already and the upstream is correct
+    if [[ -d "$dir/.git" ]] && ( _cd "$dir" && [[ "$url" == "$(git config --get remote.origin.url)" ]] )
     then
+        if ( _cd "$dir" && ! git fetch --all --prune --quiet )
+        then
+            printw "Failed to fetch upstream '$url' in '$dir'."
+        fi
+    # Otherwise, backup and remove any existed invalid file/directory occupied the target
+    # location before the clone
+    else
+        if [[ -e "$dir" ]] && { [[ ! -d "$dir" ]] || { [[ -d "$dir" ]] && ! _is_dir_empty "$dir"; }; }
+        then
+            printw "'$dir' is already there, backup to '$BAKPATH'."
+            mkdir -p $BAKPATH && mv $dir $BAKPATH
+        fi
+
         if ! git clone --quiet "$url" "$dir"
         then
-            printe "Failed to clone repository $url ..."
+            printe "Failed to clone repository '$url' to '$dir'."
             exit 1
-        fi
-    else
-        _cd "$dir"
-
-        # Make sure we are fetching the right repo
-        if [[ "$url" != "$(git config --get remote.origin.url)" ]]
-        then
-            printw "We are not in right repo, backup the existed repo to $BAKPATH"
-            _cd ..
-            mkdir -p $BAKPATH && mv $dir $BAKPATH
-            if ! git clone --quiet "$url" "$dir"
-            then
-                printe "Failed to clone repository $url ..."
-                exit 1
-            fi
-        else
-            if ! git fetch --all --prune --quiet
-            then
-                printw "Failed to fetch upstream ..."
-            fi
         fi
     fi
 
