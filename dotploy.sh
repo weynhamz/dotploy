@@ -292,10 +292,6 @@ ensure_source_git() (
             if ! git fetch --all --prune --quiet
             then
                 printw "Failed to fetch upstream ..."
-            else
-                #keep the head in sync with the remote
-                git fetch --quiet origin HEAD
-                echo "$(git rev-parse FETCH_HEAD)" > .git/HEAD
             fi
         fi
     fi
@@ -309,6 +305,10 @@ ensure_source_git() (
         then
             printw "Unable to checkout the requested reference"
         fi
+    else
+        #keep the head in sync with the remote
+        git fetch --quiet origin HEAD
+        echo "$(git rev-parse FETCH_HEAD)" > .git/HEAD
     fi
 )
 
