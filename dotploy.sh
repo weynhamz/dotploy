@@ -105,13 +105,23 @@ print() {
     [[ $VERBOSE -eq 1 ]] && [[ -n "$1" ]] && echo "$1" | sed "s/^/$indent/g"
 }
 
-printe() {
-    [[ -n "$1" ]] && echo "ERROR: $1" >&2
-}
+printe() (
+    exec 1>&2
+    [[ $VERBOSE -eq 1 ]] && {
+        [[ -n "$1" ]] && print "ERROR: $1"
+    } || {
+        [[ -n "$1" ]] && echo "ERROR: $1"
+    }
+)
 
-printw() {
-    [[ -n "$1" ]] && echo "Warning: $1" >&2
-}
+printw() (
+    exec 1>&2
+    [[ $VERBOSE -eq 1 ]] && {
+        [[ -n "$1" ]] && print "Warning: $1"
+    } || {
+        [[ -n "$1" ]] && echo "Warning: $1"
+    }
+)
 
 # Abtain the record to the source
 get_src() {
