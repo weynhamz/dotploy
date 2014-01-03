@@ -72,6 +72,11 @@ fi
 #
 ###############################################################################
 
+_git_is_ref_valid() {
+    local ref=${1:-ref not set}
+    git show-ref --verify --quiet $ref
+}
+
 _git_has_local_change() {
     ! git diff-index --quiet --exit-code HEAD
 }
@@ -80,8 +85,13 @@ _git_is_head_detached() {
     ! git symbolic-ref HEAD &>/dev/null
 }
 
+_git_is_ref_in_remote() {
+    local ref=${1:?ref not set}
+    [[ -n "$(git branch -r --contains $ref)" ]]
+}
+
 _git_is_head_in_remote() {
-    [[ -n "$(git branch -r --contains HEAD)" ]]
+    _git_is_ref_in_remote HEAD
 }
 
 _git_is_head_tracking_remote() {
@@ -317,7 +327,7 @@ ensure_source_git() (
     _cd "$dir"
 
     local ref=$(get_fragment "$src"  "ref")
-    if [[ -z $ref ]]
+    if [[ -z $ref ]] || { ! _git_is_ref_valid $ref && ! _git_is_ref_in_remote $ref && printw "$ref is not a valid git ref, use HEAD of origin."; }
     then
         #keep the head in sync with the remote
         ref=refs/remotes/origin/HEAD
