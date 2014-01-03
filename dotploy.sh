@@ -97,7 +97,12 @@ IGNORE=(
 )
 
 print() {
-    [[ $VERBOSE -eq 1 ]] && [[ -n "$1" ]] && echo "$1" | sed "s/^/$(printf '|%.0s' $(seq 1 $DEPTH))\t/g"
+    local indent
+    if [[ $DEPTH -gt 1 ]]
+    then
+        indent=$(printf '\t%.0s' $(seq 1 $(($DEPTH -1))))
+    fi
+    [[ $VERBOSE -eq 1 ]] && [[ -n "$1" ]] && echo "$1" | sed "s/^/$indent/g"
 }
 
 printe() {
@@ -320,8 +325,12 @@ _prune() {
         _check $file
 
         [[ $? -eq 1 ]] && {
+            DEPTH=$(( $DEPTH + 1 ))
             print 'UPDATE:'$'\t'"$file"
+            DEPTH=$(( $DEPTH + 1 ))
             print "$(rm -v $file)"
+            DEPTH=$(( $DEPTH - 1 ))
+            DEPTH=$(( $DEPTH - 1 ))
         }
     done
 }
@@ -491,14 +500,18 @@ _symlink() {
     [[ -n "$repath" ]] && {
         # backup if the target already exits
         [[ -f "$DESTHOME/$repath" ]] && {
+            DEPTH=$(( $DEPTH + 1 ))
             print 'BACKUP:'$'\t'"$DESTHOME/$repath"
             DEPTH=$(( $DEPTH + 1 ))
             print "$(mkdir -vp $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
             DEPTH=$(( $DEPTH - 1 ))
+            DEPTH=$(( $DEPTH - 1 ))
         }
+        DEPTH=$(( $DEPTH + 1 ))
         print $'MKDIR:\t'"$DESTHOME/$repath"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(mkdir -vp $DESTHOME/$repath)"
+        DEPTH=$(( $DEPTH - 1 ))
         DEPTH=$(( $DEPTH - 1 ))
     }
 
@@ -508,18 +521,22 @@ _symlink() {
 
     # remove broken link
     [[ $status -eq 1 ]] && {
+        DEPTH=$(( $DEPTH + 1 ))
         print 'REMOVE:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(rm -v $dst)"
+        DEPTH=$(( $DEPTH - 1 ))
         DEPTH=$(( $DEPTH - 1 ))
     }
 
     # backup existed file
     [[ $status -eq 2 ]] && {
         [[ $FORCE = 1 ]] && {
+            DEPTH=$(( $DEPTH + 1 ))
             print 'BACKUP:'$'\t'"$dst"
             DEPTH=$(( $DEPTH + 1 ))
             print "$(mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
+            DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
         } || {
             printw "$dst already exists, use --force option to force deploying"
@@ -529,9 +546,11 @@ _symlink() {
 
     # symlink the file in the repo
     [[ $status -ne 0 ]] && [[ $status -ne 4 ]] && {
+        DEPTH=$(( $DEPTH + 1 ))
         print 'LINK:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(ln -v -s $src $dst)"
+        DEPTH=$(( $DEPTH - 1 ))
         DEPTH=$(( $DEPTH - 1 ))
     }
 }
