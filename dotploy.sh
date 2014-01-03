@@ -252,10 +252,10 @@ get_fragment() {
         then
             if [[ $fragment =~ tag=* ]]
             then
-                echo $fragment | sed 's/.*tag=\([^&]*\).*/\1/g'
+                echo $fragment | sed 's/.*tag=\([^&]*\).*/\1/g;s|^refs/tags/||;s|^|refs/tags/|'
             elif [[ $fragment =~ branch=* ]]
             then
-                echo $fragment | sed 's/.*branch=\([^&]*\).*/\1/g'
+                echo $fragment | sed 's/.*branch=\([^&]*\).*/\1/g;s|^refs/heads/||;s|^refs/remotes/origin/||;s|^|refs/remotes/origin/|'
             elif [[ $fragment =~ commit=* ]]
             then
                 echo $fragment | sed 's/.*commit=\([^&]*\).*/\1/g'
@@ -339,13 +339,21 @@ ensure_source_git() (
         then
             printw "Our clone of the repository $(pwd) has local changes, abort further operation, please resolve first."
         else
-            if ! git checkout $ref &>/dev/null
+            if [[ $ref =~ ^refs/remotes/origin ]] && [[ $ref != refs/remotes/origin/HEAD ]]
             then
-                if [[ $ref == "refs/remotes/origin/HEAD" ]]
+                if ! { git checkout --quiet ${ref##refs/remotes/origin/} && git reset --hard --quiet $ref; }
                 then
-                    printw "Unable to keep HEAD in sync with remote"
-                else
-                    printw "Unable to checkout requested reference"
+                    printw "Unable to keep the branch in sync with upstream"
+                fi
+            else
+                if ! git checkout --quiet $ref
+                then
+                    if [[ $ref == "refs/remotes/origin/HEAD" ]]
+                    then
+                        printw "Unable to keep HEAD in sync with remote"
+                    else
+                        printw "Unable to checkout requested reference"
+                    fi
                 fi
             fi
         fi
