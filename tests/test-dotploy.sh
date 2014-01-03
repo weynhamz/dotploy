@@ -708,7 +708,7 @@ _test_run "Remote git repository deploy with a wrong existing repo" '
     (
         mkdir -p dotsdest/.dotploy/vcs/
         cd dotsdest/.dotploy/vcs/
-        git clone $TEST_FIELD/test.git test.dotfile > /dev/null
+        git clone $TEST_FIELD/test.git test.dotfile &>/dev/null
         cd test.dotfile
         git remote set-url --add origin $TEST_FIELD/test1.git
     )
@@ -729,7 +729,7 @@ _test_run "Remote git repository deploy with a dead-upstream existing repo" '
     (
         mkdir -p dotsdest/.dotploy/vcs/
         cd dotsdest/.dotploy/vcs/
-        git clone $TEST_FIELD/test.git test.dotfile > /dev/null
+        git clone $TEST_FIELD/test.git test.dotfile &>/dev/null
     )
     rm -rf $TEST_FIELD/test.git
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"

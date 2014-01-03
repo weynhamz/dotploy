@@ -254,7 +254,7 @@ ensure_source_git() (
 
     if [[ ! -d "$dir" ]] || _is_dir_empty "$dir"
     then
-        if ! git clone "$url" "$dir" &>/dev/null
+        if ! git clone --quiet "$url" "$dir"
         then
             printe "Failed to clone repository $url ..."
             exit 1
@@ -268,18 +268,18 @@ ensure_source_git() (
             printw "We are not in right repo, backup the existed repo to $BAKPATH"
             _cd ..
             mkdir -p $BAKPATH && mv $dir $BAKPATH
-            if ! git clone "$url" "$dir" &>/dev/null
+            if ! git clone --quiet "$url" "$dir"
             then
                 printe "Failed to clone repository $url ..."
                 exit 1
             fi
         else
-            if ! git fetch --all --prune
+            if ! git fetch --all --prune --quiet
             then
                 printw "Failed to fetch upstream ..."
             else
                 #keep the head in sync with the remote
-                git fetch origin HEAD
+                git fetch --quiet origin HEAD
                 echo "$(git rev-parse FETCH_HEAD)" > .git/HEAD
             fi
         fi
@@ -290,7 +290,7 @@ ensure_source_git() (
     local ref=$(get_fragment "$src"  "ref")
     if [[ -n $ref ]]
     then
-        if ! git checkout $ref &>/dev/null
+        if ! git checkout --quiet $ref
         then
             printw "Unable to checkout the requested reference"
         fi
