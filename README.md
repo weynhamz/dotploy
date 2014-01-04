@@ -205,3 +205,7 @@ Copyright
 ---------
 
 Techlive Zheng [techlivezheng at gmail.com] 2012
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/techlivezheng/dotploy/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
