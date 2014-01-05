@@ -35,7 +35,7 @@
 _abspath() {
     local path=${1:-$(caller | cut -d' ' -f2)}
     local path_dir=$( dirname "$path" )
-    while [ -h "$path" ]
+    while [[ -h "$path" ]]
     do
         path=$(readlink "$path")
         [[ $path != /* ]] && path=$path_dir/$path
@@ -68,6 +68,38 @@ fi
 
 ###############################################################################
 #
+# Git Wrappers
+#
+###############################################################################
+
+_git_is_ref_valid() {
+    local ref=${1:-ref not set}
+    git show-ref --verify --quiet $ref
+}
+
+_git_has_local_change() {
+    ! git diff-index --quiet --exit-code HEAD
+}
+
+_git_is_head_detached() {
+    ! git symbolic-ref HEAD &>/dev/null
+}
+
+_git_is_ref_in_remote() {
+    local ref=${1:?ref not set}
+    [[ -n "$(git branch -r --contains $ref)" ]]
+}
+
+_git_is_head_in_remote() {
+    _git_is_ref_in_remote HEAD
+}
+
+_git_is_head_tracking_remote() {
+    git rev-parse --abbrev-ref @{u} &>/dev/null
+}
+
+###############################################################################
+#
 # Main Program
 #
 ###############################################################################
@@ -97,16 +129,31 @@ IGNORE=(
 )
 
 print() {
-    [ $VERBOSE -eq 1 ] && [ -n "$1" ] && echo "$1" | sed "s/^/$(printf '|%.0s' $(seq 1 $DEPTH))\t/g"
+    local indent
+    if [[ $DEPTH -gt 1 ]]
+    then
+        indent=$(printf '\t%.0s' $(seq 1 $(($DEPTH -1))))
+    fi
+    [[ $OPT_VERBOSE -eq 1 ]] && [[ -n "$1" ]] && echo "$1" | sed "s/^/$indent/g"
 }
 
-printe() {
-    [ -n "$1" ] && echo "ERROR: $1" >&2
-}
+printe() (
+    exec 1>&2
+    [[ $OPT_VERBOSE -eq 1 ]] && {
+        [[ -n "$1" ]] && print "ERROR: $1"
+    } || {
+        [[ -n "$1" ]] && echo "ERROR: $1"
+    }
+)
 
-printw() {
-    [ -n "$1" ] && echo "Warning: $1" >&2
-}
+printw() (
+    exec 1>&2
+    [[ $OPT_VERBOSE -eq 1 ]] && {
+        [[ -n "$1" ]] && print "Warning: $1"
+    } || {
+        [[ -n "$1" ]] && echo "Warning: $1"
+    }
+)
 
 # Abtain the record to the source
 get_src() {
@@ -128,7 +175,8 @@ get_url() {
 
 # extract the protocol from a source entry - return "local" for local sources
 get_protocol() {
-    if [[ $1 = *://* ]]; then
+    if [[ $1 = *://* ]]
+    then
         # strip leading filename
         local proto="${1##*::}"
         printf "%s\n" "${proto%%://*}"
@@ -142,7 +190,8 @@ get_filename() {
     local src=$1
 
     # if a filename is specified, use it
-    if [[ $src = *::* ]]; then
+    if [[ $src = *::* ]]
+    then
         printf "%s\n" ${src%%::*}
         return
     fi
@@ -153,7 +202,8 @@ get_filename() {
             filename=${src%%#*}
             filename=${filename%/}
             filename=${filename##*/}
-            if [[ $proto = git* ]]; then
+            if [[ $proto = git* ]]
+            then
                 filename=${filename%%.git*}
             fi
             ;;
@@ -173,7 +223,8 @@ get_filepath() {
     local proto=$(get_protocol "$src")
     case "$proto" in
         git*)
-            if [[ -n $file ]]; then
+            if [[ -n $file ]]
+            then
                 echo $(get_dir "$1")/$file
             else
                 echo $(get_dir "$1")
@@ -190,21 +241,29 @@ get_fragment() {
     local target=$2
     local fragment=${url#*#}
 
-    if [[ $fragment = "$url" ]]; then
+    if [[ $fragment = "$url" ]]
+    then
         return
     fi
 
-    if [[ -n $fragment ]]; then
-        if [[ $target = ref ]]; then
-            if [[ $fragment =~ tag=* ]]; then
-                echo $fragment | sed 's/.*tag=\([^&]*\).*/\1/g'
-            elif [[ $fragment =~ commit=* ]]; then
+    if [[ -n $fragment ]]
+    then
+        if [[ $target = ref ]]
+        then
+            if [[ $fragment =~ tag=* ]]
+            then
+                echo $fragment | sed 's/.*tag=\([^&]*\).*/\1/g;s|^refs/tags/||;s|^|refs/tags/|'
+            elif [[ $fragment =~ branch=* ]]
+            then
+                echo $fragment | sed 's/.*branch=\([^&]*\).*/\1/g;s|^refs/heads/||;s|^refs/remotes/origin/||;s|^|refs/remotes/origin/|'
+            elif [[ $fragment =~ commit=* ]]
+            then
                 echo $fragment | sed 's/.*commit=\([^&]*\).*/\1/g'
-            elif [[ $fragment =~ branch=* ]]; then
-                echo $fragment | sed 's/.*branch=\([^&]*\).*/\1/g'
             fi
-        elif [[ $target = file ]]; then
-            if [[ $fragment =~ file=* ]]; then
+        elif [[ $target = file ]]
+        then
+            if [[ $fragment =~ file=* ]]
+            then
                 echo $fragment | sed 's/.*file=\([^&]*\).*/\1/g'
             fi
         fi
@@ -240,41 +299,86 @@ ensure_source_git() (
     url=${url##*file:\/\/}
     url=${url%%#*}
 
-    if [[ ! -d "$dir" ]] || _is_dir_empty "$dir" ; then
-        if ! git clone "$url" "$dir" &>/dev/null; then
-            printe "Failed to clone repository $url ..."
-            exit 1
-        fi
-    else
-        _cd "$dir"
-
-        # Make sure we are fetching the right repo
-        if [[ "$url" != "$(git config --get remote.origin.url)" ]] ; then
-            printw "We are not in right repo, backup the existed repo to $BAKPATH"
-            _cd ..
-            mkdir -p $BAKPATH && mv $dir $BAKPATH
-            if ! git clone "$url" "$dir" &>/dev/null; then
-                printe "Failed to clone repository $url ..."
-                exit 1
-            fi
+    # Fetch the remote update if we have it cloned already and the upstream is correct
+    if [[ -d "$dir/.git" ]] && ( _cd "$dir" && [[ "$url" == "$(git config --get remote.origin.url)" ]] )
+    then
+        if ( _cd "$dir" && ! git fetch --all --prune --quiet )
+        then
+            printw "Failed to fetch upstream '$url' in '$dir'."
         else
-            if ! git fetch --all --prune; then
-                printw "Failed to fetch upstream ..."
-            else
-                #keep the head in sync
-                git fetch origin HEAD
-                echo "$(git rev-parse FETCH_HEAD)" > .git/HEAD
-            fi
+            ( _cd "$dir" && git remote set-head origin -a &>/dev/null )
+        fi
+    # Otherwise, backup and remove any existed invalid file/directory occupied the target
+    # location before the clone
+    else
+        if [[ -e "$dir" ]] && { [[ ! -d "$dir" ]] || { [[ -d "$dir" ]] && ! _is_dir_empty "$dir"; }; }
+        then
+            printw "'$dir' is already there, backup to '$BAKPATH'."
+            mkdir -p $BAKPATH && mv $dir $BAKPATH
+        fi
+
+        if ! git clone --quiet "$url" "$dir"
+        then
+            printe "Failed to clone repository '$url' to '$dir'."
+            exit 1
         fi
     fi
 
     _cd "$dir"
 
     local ref=$(get_fragment "$src"  "ref")
-    if [[ -n $ref ]]; then
-        if ! git checkout $ref &>/dev/null; then
-            printw "Unable to checkout the requested reference"
+    if [[ -z $ref ]] || { ! _git_is_ref_valid $ref && ! _git_is_ref_in_remote $ref && printw "$ref is not a valid git ref, use HEAD of origin."; }
+    then
+        #keep the head in sync with the remote
+        ref=refs/remotes/origin/HEAD
+    fi
+
+    if [[ $(git rev-parse HEAD) != $(git rev-parse $ref) ]]
+    then
+        if _git_has_local_change || { _git_is_head_detached && ! _git_is_head_in_remote; } || { _git_is_head_tracking_remote && ! _git_is_head_in_remote; }
+        then
+            printw "Our clone of the repository $(pwd) has local changes, abort further operation, please resolve first."
+        else
+            if [[ $ref =~ ^refs/remotes/origin ]] && [[ $ref != refs/remotes/origin/HEAD ]]
+            then
+                if ! { git checkout --quiet ${ref##refs/remotes/origin/} && git reset --hard --quiet $ref; }
+                then
+                    printw "Unable to keep the branch in sync with upstream"
+                fi
+            else
+                if ! git checkout --quiet $ref
+                then
+                    if [[ $ref == "refs/remotes/origin/HEAD" ]]
+                    then
+                        printw "Unable to keep HEAD in sync with remote"
+                    else
+                        printw "Unable to checkout requested reference"
+                    fi
+                fi
+            fi
         fi
+    fi
+
+    if [[ $OPT_VCS_CLEAN == 1 ]]
+    then
+        # clean dangling objects
+        git reflog expire --expire=now --all
+
+        # clean safe-keeping references
+        refbak=$(git for-each-ref --format="%(refname)" refs/original/)
+        if [ -n "$refbak" ]
+        then
+            echo -n $refbak | xargs -n 1 git update-ref -d
+        fi
+
+        # show git database status
+        git fsck
+
+        # repack git database objects
+        git repack -a -d
+
+        # collect garbage
+        git gc --prune=now --aggresive
     fi
 )
 
@@ -300,9 +404,13 @@ _prune() {
     for file in $(cat $logfile); do
         _check $file
 
-        [ $? -eq 1 ] && {
-            print $'UPDATE:\t'"$file"
+        [[ $? -eq 1 ]] && {
+            DEPTH=$(( $DEPTH + 1 ))
+            print 'UPDATE:'$'\t'"$file"
+            DEPTH=$(( $DEPTH + 1 ))
             print "$(rm -v $file)"
+            DEPTH=$(( $DEPTH - 1 ))
+            DEPTH=$(( $DEPTH - 1 ))
         }
     done
 }
@@ -330,36 +438,43 @@ _check() {
     repath=${dst#$DESTHOME}
     repath=${repath#/}
 
-    [ -e $DOTSREPO/$repath ] && src=$DOTSREPO/$repath
-    [ -e $DOTSREPO/$repath.__SRC ] && src=$DOTSREPO/$repath.__SRC
-    [ -e $DOTSREPO/__USER.$USER/$repath ] && src=$DOTSREPO/__USER.$USER/$repath
-    [ -e $DOTSREPO/__USER.$USER/$repath.__SRC ] && src=$DOTSREPO/__USER.$USER/$repath.__SRC
-    [ -e $DOTSREPO/__HOST.$HOST/$repath ] && src=$DOTSREPO/__HOST.$HOST/$repath
-    [ -e $DOTSREPO/__HOST.$HOST/$repath.__SRC ] && src=$DOTSREPO/__HOST.$HOST/$repath.__SRC
-    [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
-    [ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC ] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC
+    [[ -e $DOTSREPO/$repath ]] && src=$DOTSREPO/$repath
+    [[ -e $DOTSREPO/$repath.__SRC ]] && src=$DOTSREPO/$repath.__SRC
+    [[ -e $DOTSREPO/__USER.$USER/$repath ]] && src=$DOTSREPO/__USER.$USER/$repath
+    [[ -e $DOTSREPO/__USER.$USER/$repath.__SRC ]] && src=$DOTSREPO/__USER.$USER/$repath.__SRC
+    [[ -e $DOTSREPO/__HOST.$HOST/$repath ]] && src=$DOTSREPO/__HOST.$HOST/$repath
+    [[ -e $DOTSREPO/__HOST.$HOST/$repath.__SRC ]] && src=$DOTSREPO/__HOST.$HOST/$repath.__SRC
+    [[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ]] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
+    [[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC ]] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC
 
-    if [ -h $dst ];then
+    if [[ -h $dst ]]
+    then
         local csrc=$(readlink $dst)
 
-        if [ "$csrc" == "$src" ];then
+        if [[ "$csrc" == "$src" ]]
+        then
             return 0
-        elif [[ $src =~ .*\.__SRC ]] && [[ $csrc == $(get_filepath "$src") ]];then
+        elif [[ $src =~ .*\.__SRC ]] && [[ $csrc == $(get_filepath "$src") ]]
+        then
             return 0
         else
-            if [[ $csrc =~ $DOTSHOME ]];then
+            if [[ $csrc =~ $DOTSHOME ]]
+            then
                 return 1
             else
                 return 2
             fi
         fi
-    elif [ -d $dst ];then
-        if [ -f $src/__KEEPED ];then
+    elif [[ -d $dst ]]
+    then
+        if [[ -f $src/__KEEPED ]]
+        then
             return 4
         else
             return 2
         fi
-    elif [ -f $dst ];then
+    elif [[ -f $dst ]]
+    then
         return 2
     else
         return 3
@@ -382,7 +497,7 @@ _deploy() {
     local dstdir=$2
 
     DEPTH=$(( $DEPTH + 1 ))
-    print $'ENTER:\t'"$dotdir"
+    print 'ENTER:'$'\t'"$dotdir"
 
     local filelist=$(ls -1A --color=none $dotdir)
 
@@ -395,31 +510,35 @@ _deploy() {
         done
 
         # apply user-defined ignoring rules
-        if [ -f $dotdir/__IGNORE ]; then
+        if [[ -f $dotdir/__IGNORE ]]
+        then
             local line
             for line in $(cat $dotdir/__IGNORE);do
                 [[ $file =~ $line ]] && continue 2
             done
         fi
 
-        if [ -d $dotdir/$file ]; then
-            if [ -e $dotdir/$file/__KEEPED ];then
+        if [[ -d $dotdir/$file ]]
+        then
+            if [[ -e $dotdir/$file/__KEEPED ]]
+            then
                 # this directory needs to be kept,
                 # deploy its contents.
                 _deploy $dotdir/$file $dstdir/$file
             else
                 _symlink $dotdir $dstdir $file
             fi
-        elif [ -f $dotdir/$file ]; then
+        elif [[ -f $dotdir/$file ]]
+        then
             _symlink $dotdir $dstdir $file
         fi
 
         grep "^$dstdir/$file\$" $LOGFILE >/dev/null 2>&1
 
-        [ $? -ne 0 ] && echo "$dstdir/$file" >> $LOGFILE
+        [[ $? -ne 0 ]] && echo "$dstdir/$file" >> $LOGFILE
     done
 
-    print $'LEAVE:\t'"$dotdir"
+    print 'LEAVE:'$'\t'"$dotdir"
     DEPTH=$(( $DEPTH - 1 ))
 }
 
@@ -458,17 +577,21 @@ _symlink() {
     repath=${repath#/}
 
     # for nested path, need to mkdir parent first
-    [ -n "$repath" ] && {
+    [[ -n "$repath" ]] && {
         # backup if the target already exits
-        [ -f "$DESTHOME/$repath" ] && {
-            print $'BACKUP:\t'"$DESTHOME/$repath"
+        [[ -f "$DESTHOME/$repath" ]] && {
+            DEPTH=$(( $DEPTH + 1 ))
+            print 'BACKUP:'$'\t'"$DESTHOME/$repath"
             DEPTH=$(( $DEPTH + 1 ))
             print "$(mkdir -vp $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
             DEPTH=$(( $DEPTH - 1 ))
+            DEPTH=$(( $DEPTH - 1 ))
         }
+        DEPTH=$(( $DEPTH + 1 ))
         print $'MKDIR:\t'"$DESTHOME/$repath"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(mkdir -vp $DESTHOME/$repath)"
+        DEPTH=$(( $DEPTH - 1 ))
         DEPTH=$(( $DEPTH - 1 ))
     }
 
@@ -477,19 +600,23 @@ _symlink() {
     local status=$?
 
     # remove broken link
-    [ $status -eq 1 ] && {
-        print $'REMOVE:\t'"$dst"
+    [[ $status -eq 1 ]] && {
+        DEPTH=$(( $DEPTH + 1 ))
+        print 'REMOVE:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(rm -v $dst)"
+        DEPTH=$(( $DEPTH - 1 ))
         DEPTH=$(( $DEPTH - 1 ))
     }
 
     # backup existed file
-    [ $status -eq 2 ] && {
-        [ $FORCE = 1 ] && {
-            print $'BACKUP:\t'"$dst"
+    [[ $status -eq 2 ]] && {
+        [[ $OPT_FORCE = 1 ]] && {
+            DEPTH=$(( $DEPTH + 1 ))
+            print 'BACKUP:'$'\t'"$dst"
             DEPTH=$(( $DEPTH + 1 ))
             print "$(mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
+            DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
         } || {
             printw "$dst already exists, use --force option to force deploying"
@@ -498,10 +625,12 @@ _symlink() {
     }
 
     # symlink the file in the repo
-    [ $status -ne 0 ] && [ $status -ne 4 ] && {
-        print $'SYMLINK:\t'"$dst"
+    [[ $status -ne 0 ]] && [[ $status -ne 4 ]] && {
+        DEPTH=$(( $DEPTH + 1 ))
+        print 'LINK:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(ln -v -s $src $dst)"
+        DEPTH=$(( $DEPTH - 1 ))
         DEPTH=$(( $DEPTH - 1 ))
     }
 }
@@ -513,18 +642,22 @@ doadd() {
     local rpath=${TARGET##$DESTHOME/}
 
     local dest
-    if [[ $INHOST == 0 ]] && [[ $INUSER == 0 ]];then
+    if [[ $OPT_HOST == 0 ]] && [[ $OPT_USER == 0 ]]
+    then
         dest=$DOTSREPO
-    elif [[ $INHOST == 1 ]] && [[ $INUSER == 0 ]];then
+    elif [[ $OPT_HOST == 1 ]] && [[ $OPT_USER == 0 ]]
+    then
         dest=$DOTSREPO/__HOST.$HOST
-    elif [[ $INHOST == 0 ]] && [[ $INUSER == 1 ]];then
+    elif [[ $OPT_HOST == 0 ]] && [[ $OPT_USER == 1 ]]
+    then
         dest=$DOTSREPO/__USER.$USER
-    elif [[ $INHOST == 1 ]] && [[ $INUSER == 1 ]];then
+    elif [[ $OPT_HOST == 1 ]] && [[ $OPT_USER == 1 ]]
+    then
         dest=$DOTSREPO/__HOST.$HOST/__USER.$USER
     fi
 
     #check if the target already in the destination
-    [[ -e $dest/$rpath ]] && [[ $FORCE == 0 ]] && {
+    [[ -e $dest/$rpath ]] && [[ $OPT_FORCE == 0 ]] && {
         die "target already exists"
     }
 
@@ -570,48 +703,49 @@ dodeploy() {
     LOGFILE=$CONFDIR/filelog
 
     # transform old backup sctruction to the new one
-    [ -d $DOTSHOME/__BACKUP/$HOST ] && {
+    [[ -d $DOTSHOME/__BACKUP/$HOST ]] && {
         echo "Performing transition ..."
 
-        [ -f $LOGFILE ] && mv $LOGFILE $LOGFILE.bak
+        [[ -f $LOGFILE ]] && mv $LOGFILE $LOGFILE.bak
         for bakpath in $(grep -l "^$DESTHOME\$" $DOTSHOME/__BACKUP/$HOST/*/DESTHOME | sed 's-/DESTHOME$--g');do
             mv $bakpath/dotploy.log $LOGFILE &>/dev/null
 
-            [ -f $bakpath/dotploy.log ] && {
+            [[ -f $bakpath/dotploy.log ]] && {
                 echo error
                 continue
             }
 
             rm $bakpath/DESTHOME &>/dev/null
 
-            [ -f $bakpath/DESTHOME ] && {
+            [[ -f $bakpath/DESTHOME ]] && {
                 echo error
                 continue
             }
 
             rmdir $bakpath &> /dev/null || mv $bakpath $CONFDIR/backup
         done
-        [ -f $LOGFILE.bak ] && mv $LOGFILE.bak $LOGFILE
+        [[ -f $LOGFILE.bak ]] && mv $LOGFILE.bak $LOGFILE
 
         rmdir --ignore-fail-on-non-empty -p $DOTSHOME/__BACKUP/$HOST
 
         echo "Transition done."
     }
 
-    if [ -f $LOGFILE ];then
+    if [[ -f $LOGFILE ]]
+    then
         _prune $LOGFILE
     fi
 
     # host user based dotfies deploy
-    [ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ] && \
+    [[ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ]] && \
         _deploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
 
     # host based dotfies deploy
-    [ -d $DOTSREPO/__HOST.$HOST ] && \
+    [[ -d $DOTSREPO/__HOST.$HOST ]] && \
         _deploy $DOTSREPO/__HOST.$HOST $DESTHOME
 
     # user based dotfies deploy
-    [ -d $DOTSREPO/__USER.$USER ] && \
+    [[ -d $DOTSREPO/__USER.$USER ]] && \
         _deploy $DOTSREPO/__USER.$USER $DESTHOME
 
     # shared dotfiles deploy
@@ -662,21 +796,25 @@ EOF
 
 declare -a args
 declare -i DEPTH=0
-declare -i FORCE=0
-declare -i INUSER=0
-declare -i INHOST=0
-declare -i VERBOSE=0
-while [ $# -gt 0 ]
+declare -i OPT_USER=0
+declare -i OPT_HOST=0
+declare -i OPT_FORCE=0
+declare -i OPT_VERBOSE=0
+declare -i OPT_VCS_CLEAN=0
+while [[ $# -gt 0 ]]
 do
     case "$1" in
         --user )
-            INUSER=1
+            OPT_USER=1
         ;;
         --host )
-            INHOST=1
+            OPT_HOST=1
         ;;
         --force )
-            FORCE=1
+            OPT_FORCE=1
+        ;;
+        --vcs-clean )
+            OPT_VCS_CLEAN=1
         ;;
         -p )
             echo "Option '-p' has been depreciated"
@@ -689,7 +827,7 @@ do
             exit 1
         ;;
         -v | --verbose )
-            VERBOSE=1
+            OPT_VERBOSE=1
         ;;
         -h | --help )
             show_help
@@ -725,21 +863,21 @@ case "$ACTION" in
         ;;
 esac
 
-[ -f "$HOME/.dotploy/config" ] && source $HOME/.dotploy/config
+[[ -f "$HOME/.dotploy/config" ]] && source $HOME/.dotploy/config
 
 DOTSHOME=$(realpath ${1:-$DOTSHOME})
 
 # make sure our destination is there
-[ -d $DOTSHOME ] || die "$DOTSHOME is not available"
+[[ -d $DOTSHOME ]] || die "$DOTSHOME is not available"
 
 DOTSREPO=$DOTSHOME/__DOTDIR
 
 # die if it is not a dotsrepo
-[ -d $DOTSREPO ] || die "$DOTSREPO is not available"
+[[ -d $DOTSREPO ]] || die "$DOTSREPO is not available"
 
 DESTHOME=$(realpath ${2:-${DESTHOME:-$HOME}})
 
 # make sure our destination is there
-[ -d $DESTHOME ] || die "$DESTHOME is not available"
+[[ -d $DESTHOME ]] || die "$DESTHOME is not available"
 
 do$ACTION

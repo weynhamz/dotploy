@@ -9,7 +9,7 @@
 _abspath() {
     local path=${1:-$(caller | cut -d' ' -f2)}
     local path_dir=$( dirname "$path" )
-    while [ -h "$path" ]
+    while [[ -h "$path" ]]
     do
         path=$(readlink "$path")
         [[ $path != /* ]] && path=$path_dir/$path
@@ -292,7 +292,7 @@ _test_run "Fallback host and user based deployment to host based" '
     _test_expect_symlink "dotsdest/.dotfile" "$TEST_FIELD/dotsrepo/__DOTDIR/__HOST.$HOST/.dotfile"
 '
 
-_test_run "Fallback host and user based deployment to host based when __USER and __HOST both their" '
+_test_run "Fallback host and user based deployment to host based when __USER and __HOST both there" '
     repo_layer=(
         "dotsrepo/__DOTDIR/__USER.$USER/.dotdir/"
         "dotsrepo/__DOTDIR/__USER.$USER/.dotfile"
@@ -682,7 +682,87 @@ _test_run "Remote git repository deploy" '
     _test_expect_symlink "dotsdest/.dotfile" "$TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile"
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     _test_expect_unmatch "$output" "Warning: $TEST_FIELD/dotsdest/.dotfile already exists, use --force option to force deploying"
-    _git_tear_down
+'
+
+_test_run "Remote git repository deploy with differnt HEAD" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
+    _git_checkout develop
+    dotploy.sh deploy "dotsrepo" "dotsdest"
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test.dotfile;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+'
+
+_test_run "Remote git repository deploy with different HEAD and local changes" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile3.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile4.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile5.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile3.__SRC"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile4.__SRC"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile5.__SRC"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
+    _git_checkout develop
+    # local has unstaged chagnes
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile1
+        rm 1
+    )
+    # local has staged chagnes
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile2
+        git rm 1
+    )
+    # local tracking branch has commit not in remote
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile3
+        touch test
+        git add test
+        git commit -m "test"
+    )
+    # local untracking branch has commit not in remote
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile4
+        git co -b test
+        touch test
+        git add test
+        git commit -m "test"
+    )
+    # local is in detached head state and has commit not in remote
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile5
+        git co HEAD~
+        touch test
+        git add test
+        git commit -m "test"
+    )
+    output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile1 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_false "test $(cd dotsdest/.dotploy/vcs/test.dotfile1;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+    _test_expect_match "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile2 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_false "test $(cd dotsdest/.dotploy/vcs/test.dotfile2;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+    _test_expect_match "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile3 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_false "test $(cd dotsdest/.dotploy/vcs/test.dotfile3;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+    _test_expect_unmatch "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile4 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test.dotfile4;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+    _test_expect_match "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile5 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_false "test $(cd dotsdest/.dotploy/vcs/test.dotfile5;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
 '
 
 _test_run "Remote git repository deploy with wrong repo url" '
@@ -693,12 +773,11 @@ _test_run "Remote git repository deploy with wrong repo url" '
     _make_layer "${repo_layer[@]}"
     echo "git+file://$TEST_FIELD/test1.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
-    _test_expect_match "$output" "ERROR: Failed to clone repository $TEST_FIELD/test1.git ..."
+    _test_expect_match "$output" "ERROR: Failed to clone repository '\''$TEST_FIELD/test1.git'\'' to '\''$TEST_FIELD/dotsdest/.dotploy/vcs/test1.dotfile'\''."
     _test_expect_missing "dotsdest/.dotfile"
-    _git_tear_down
 '
 
-_test_run "Remote git repository deploy with a wrong existing repo" '
+_test_run "Remote git repository deploy with the location to be cloned to exists" '
     _git_set_up
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
@@ -708,18 +787,35 @@ _test_run "Remote git repository deploy with a wrong existing repo" '
     (
         mkdir -p dotsdest/.dotploy/vcs/
         cd dotsdest/.dotploy/vcs/
-        git clone $TEST_FIELD/test.git test.dotfile > /dev/null
+        touch test.dotfile
+    )
+    output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    bakdir=dotsdest/.dotploy/backup/$(ls -1 --color=none dotsdest/.dotploy/backup)
+    _test_expect_match "$output" "Warning: '\''$TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile'\'' is already there, backup to '\''$TEST_FIELD/$bakdir'\''."
+    _test_expect_exists $bakdir/test.dotfile
+'
+
+_test_run "Remote git repository deploy with the existing repo upstream incorrect" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    (
+        mkdir -p dotsdest/.dotploy/vcs/
+        cd dotsdest/.dotploy/vcs/
+        git clone $TEST_FIELD/test.git test.dotfile &>/dev/null
         cd test.dotfile
         git remote set-url --add origin $TEST_FIELD/test1.git
     )
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     bakdir=dotsdest/.dotploy/backup/$(ls -1 --color=none dotsdest/.dotploy/backup)
-    _test_expect_match "$output" "Warning: We are not in right repo, backup the existed repo to $TEST_FIELD/$bakdir"
+    _test_expect_match "$output" "Warning: '\''$TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile'\'' is already there, backup to '\''$TEST_FIELD/$bakdir'\''."
     _test_expect_directory $bakdir/test.dotfile
-    _git_tear_down
 '
 
-_test_run "Remote git repository deploy with a dead-upstream existing repo" '
+_test_run "Remote git repository deploy with the existing repo upstream being dead" '
     _git_set_up
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
@@ -729,12 +825,11 @@ _test_run "Remote git repository deploy with a dead-upstream existing repo" '
     (
         mkdir -p dotsdest/.dotploy/vcs/
         cd dotsdest/.dotploy/vcs/
-        git clone $TEST_FIELD/test.git test.dotfile > /dev/null
+        git clone $TEST_FIELD/test.git test.dotfile &>/dev/null
     )
     rm -rf $TEST_FIELD/test.git
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
-    _test_expect_match "$output" "Failed to fetch upstream ..."
-    _git_tear_down
+    _test_expect_match "$output" "Warning: Failed to fetch upstream '\''$TEST_FIELD/test.git'\'' in '\''$TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile'\''."
 '
 
 _test_run "Remote git repository deploy with reference specified" '
@@ -766,7 +861,91 @@ _test_run "Remote git repository deploy with reference specified" '
     _test_expect_symlink "dotsdest/.dotfile4" "$TEST_FIELD/dotsdest/.dotploy/vcs/test4.dotfile4/5/6"
     _test_expect_symlink "dotsdest/.dotfile5" "$TEST_FIELD/dotsdest/.dotploy/vcs/test5.dotfile5/7/8"
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test5.dotfile5;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
-    _git_tear_down
+'
+
+_test_run "Remote git repository deploy with updated remote branch reference" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
+    _git_checkout develop
+    _git_commit 5/6 6 6
+    _git_checkout master
+    dotploy.sh deploy "dotsrepo" "dotsdest"
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test.dotfile;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+'
+
+_test_run "Remote git repository deploy with updated remote branch reference and local changes" '
+    _git_set_up
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile3.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile4.__SRC"
+        "dotsrepo/__DOTDIR/.dotfile5.__SRC"
+    )
+    _make_layer "${repo_layer[@]}"
+    echo "git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile1.__SRC"
+    echo "git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile2.__SRC"
+    echo "git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile3.__SRC"
+    echo "git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile4.__SRC"
+    echo "git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile5.__SRC"
+    dotploy.sh deploy "dotsrepo" "dotsdest"
+    _git_checkout develop
+    _git_commit 5/6 6 6
+    _git_checkout master
+    # local has unstaged chagnes
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile1
+        rm 1
+    )
+    # local has staged chagnes
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile2
+        git rm 1
+    )
+    # local tracking branch has commit not in remote
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile3
+        touch test
+        git add test
+        git commit -m "test"
+    )
+    # local untracking branch has commit not in remote
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile4
+        git co -b test
+        touch test
+        git add test
+        git commit -m "test"
+    )
+    # local is in detached head state and has commit not in remote
+    (
+        exec &>/dev/null
+        cd dotsdest/.dotploy/vcs/test.dotfile5
+        git co HEAD~
+        touch test
+        git add test
+        git commit -m "test"
+    )
+    output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
+    _test_expect_match "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile1 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_false "test $(cd dotsdest/.dotploy/vcs/test.dotfile1;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+    _test_expect_match "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile2 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_false "test $(cd dotsdest/.dotploy/vcs/test.dotfile2;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+    _test_expect_match "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile3 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_false "test $(cd dotsdest/.dotploy/vcs/test.dotfile3;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+    _test_expect_unmatch "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile4 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test.dotfile4;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
+    _test_expect_match "$output" "Warning: Our clone of the repository $TEST_FIELD/dotsdest/.dotploy/vcs/test.dotfile5 has local changes, abort further operation, please resolve first."
+    _test_expect_expr_false "test $(cd dotsdest/.dotploy/vcs/test.dotfile5;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
 '
 
 _test_run "Add given file to the dots repo" '

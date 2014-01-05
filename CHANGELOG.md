@@ -1,3 +1,10 @@
+Version 0.3.4
+-------------
+
+    * More clear nested verbose output
+    * Full Git HEAD/branch synchronization support
+    * Add '--vcs-clean' option to clean up VCS database
+
 Version 0.3.3
 -------------
 
