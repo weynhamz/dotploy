@@ -134,12 +134,12 @@ print() {
     then
         indent=$(printf '\t%.0s' $(seq 1 $(($DEPTH -1))))
     fi
-    [[ $VERBOSE -eq 1 ]] && [[ -n "$1" ]] && echo "$1" | sed "s/^/$indent/g"
+    [[ $OPT_VERBOSE -eq 1 ]] && [[ -n "$1" ]] && echo "$1" | sed "s/^/$indent/g"
 }
 
 printe() (
     exec 1>&2
-    [[ $VERBOSE -eq 1 ]] && {
+    [[ $OPT_VERBOSE -eq 1 ]] && {
         [[ -n "$1" ]] && print "ERROR: $1"
     } || {
         [[ -n "$1" ]] && echo "ERROR: $1"
@@ -148,7 +148,7 @@ printe() (
 
 printw() (
     exec 1>&2
-    [[ $VERBOSE -eq 1 ]] && {
+    [[ $OPT_VERBOSE -eq 1 ]] && {
         [[ -n "$1" ]] && print "Warning: $1"
     } || {
         [[ -n "$1" ]] && echo "Warning: $1"
@@ -589,7 +589,7 @@ _symlink() {
 
     # backup existed file
     [[ $status -eq 2 ]] && {
-        [[ $FORCE = 1 ]] && {
+        [[ $OPT_FORCE = 1 ]] && {
             DEPTH=$(( $DEPTH + 1 ))
             print 'BACKUP:'$'\t'"$dst"
             DEPTH=$(( $DEPTH + 1 ))
@@ -620,22 +620,22 @@ doadd() {
     local rpath=${TARGET##$DESTHOME/}
 
     local dest
-    if [[ $INHOST == 0 ]] && [[ $INUSER == 0 ]]
+    if [[ $OPT_HOST == 0 ]] && [[ $OPT_USER == 0 ]]
     then
         dest=$DOTSREPO
-    elif [[ $INHOST == 1 ]] && [[ $INUSER == 0 ]]
+    elif [[ $OPT_HOST == 1 ]] && [[ $OPT_USER == 0 ]]
     then
         dest=$DOTSREPO/__HOST.$HOST
-    elif [[ $INHOST == 0 ]] && [[ $INUSER == 1 ]]
+    elif [[ $OPT_HOST == 0 ]] && [[ $OPT_USER == 1 ]]
     then
         dest=$DOTSREPO/__USER.$USER
-    elif [[ $INHOST == 1 ]] && [[ $INUSER == 1 ]]
+    elif [[ $OPT_HOST == 1 ]] && [[ $OPT_USER == 1 ]]
     then
         dest=$DOTSREPO/__HOST.$HOST/__USER.$USER
     fi
 
     #check if the target already in the destination
-    [[ -e $dest/$rpath ]] && [[ $FORCE == 0 ]] && {
+    [[ -e $dest/$rpath ]] && [[ $OPT_FORCE == 0 ]] && {
         die "target already exists"
     }
 
@@ -774,21 +774,21 @@ EOF
 
 declare -a args
 declare -i DEPTH=0
-declare -i FORCE=0
-declare -i INUSER=0
-declare -i INHOST=0
-declare -i VERBOSE=0
+declare -i OPT_USER=0
+declare -i OPT_HOST=0
+declare -i OPT_FORCE=0
+declare -i OPT_VERBOSE=0
 while [[ $# -gt 0 ]]
 do
     case "$1" in
         --user )
-            INUSER=1
+            OPT_USER=1
         ;;
         --host )
-            INHOST=1
+            OPT_HOST=1
         ;;
         --force )
-            FORCE=1
+            OPT_FORCE=1
         ;;
         -p )
             echo "Option '-p' has been depreciated"
@@ -801,7 +801,7 @@ do
             exit 1
         ;;
         -v | --verbose )
-            VERBOSE=1
+            OPT_VERBOSE=1
         ;;
         -h | --help )
             show_help
