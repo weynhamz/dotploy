@@ -358,6 +358,28 @@ ensure_source_git() (
             fi
         fi
     fi
+
+    if [[ $OPT_VCS_CLEAN == 1 ]]
+    then
+        # clean dangling objects
+        git reflog expire --expire=now --all
+
+        # clean safe-keeping references
+        refbak=$(git for-each-ref --format="%(refname)" refs/original/)
+        if [ -n "$refbak" ]
+        then
+            echo -n $refbak | xargs -n 1 git update-ref -d
+        fi
+
+        # show git database status
+        git fsck
+
+        # repack git database objects
+        git repack -a -d
+
+        # collect garbage
+        git gc --prune=now --aggresive
+    fi
 )
 
 ensure_source_local() (
@@ -778,6 +800,7 @@ declare -i OPT_USER=0
 declare -i OPT_HOST=0
 declare -i OPT_FORCE=0
 declare -i OPT_VERBOSE=0
+declare -i OPT_VCS_CLEAN=0
 while [[ $# -gt 0 ]]
 do
     case "$1" in
@@ -789,6 +812,9 @@ do
         ;;
         --force )
             OPT_FORCE=1
+        ;;
+        --vcs-clean )
+            OPT_VCS_CLEAN=1
         ;;
         -p )
             echo "Option '-p' has been depreciated"
