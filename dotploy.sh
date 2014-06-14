@@ -164,7 +164,7 @@ get_src() {
 get_dir() {
     mkdir -p $CONFDIR/vcs/
 
-    echo $CONFDIR/vcs/$(get_filename "$(get_src "$1")")$(basename "$1" | sed 's/.__SRC$//g')
+    echo $CONFDIR/vcs/$(get_src "$1" | md5sum - | cut -d ' ' -f 1)
 }
 
 # extract the URL from a source entry
