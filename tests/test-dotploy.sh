@@ -79,25 +79,22 @@ _make_layer() {
 
 _git_tag() (
     exec &>/dev/null
-    cd test.git
 
     git tag "$@"
 )
 
 _git_init() (
     exec &>/dev/null
-    cd test.git
 
     git init "$@"
 )
 
 _git_commit() (
+    exec &>/dev/null
+
     file=${1:?not set}
     data=${2:?not set}
     info=${3:?not set}
-
-    exec &>/dev/null
-    cd test.git
 
     [[ $1 =~ */ ]] && {
         mkdir -p $file
@@ -113,13 +110,16 @@ _git_commit() (
 
 _git_checkout() (
     exec &>/dev/null
-    cd test.git
 
     git checkout "$@"
 )
 
 _git_set_up() (
-    mkdir -p "test.git"
+    dir=${1:?not set}
+    mkdir -p "$dir"
+
+    cd "$dir"
+
     _git_init
     _git_commit 1 1 1
     _git_commit 2 2 2
@@ -131,7 +131,8 @@ _git_set_up() (
 )
 
 _git_tear_down() {
-    rm -rf "test.git"
+    dir=${1:?not set}
+    rm -rf "$dir"
 }
 
 ###############################################################################
@@ -672,7 +673,7 @@ _test_run "Local file/directory deploy with target missing" '
 '
 
 _test_run "Remote git repository deploy" '
-    _git_set_up
+    _git_set_up test.git
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
     )
@@ -685,20 +686,23 @@ _test_run "Remote git repository deploy" '
 '
 
 _test_run "Remote git repository deploy with differnt HEAD" '
-    _git_set_up
+    _git_set_up test.git
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
     )
     _make_layer "${repo_layer[@]}"
     echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
     dotploy.sh deploy "dotsrepo" "dotsdest"
+    (
+    cd test.git;
     _git_checkout develop
+    )
     dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test.dotfile;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
 '
 
 _test_run "Remote git repository deploy with different HEAD and local changes" '
-    _git_set_up
+    _git_set_up test.git
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile1.__SRC"
         "dotsrepo/__DOTDIR/.dotfile2.__SRC"
@@ -713,7 +717,10 @@ _test_run "Remote git repository deploy with different HEAD and local changes" '
     echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile4.__SRC"
     echo "git+file://$TEST_FIELD/test.git" > "dotsrepo/__DOTDIR/.dotfile5.__SRC"
     dotploy.sh deploy "dotsrepo" "dotsdest"
+    (
+    cd test.git
     _git_checkout develop
+    )
     # local has unstaged chagnes
     (
         exec &>/dev/null
@@ -766,7 +773,7 @@ _test_run "Remote git repository deploy with different HEAD and local changes" '
 '
 
 _test_run "Remote git repository deploy with wrong repo url" '
-    _git_set_up
+    _git_set_up test.git
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
     )
@@ -778,7 +785,7 @@ _test_run "Remote git repository deploy with wrong repo url" '
 '
 
 _test_run "Remote git repository deploy with the location to be cloned to exists" '
-    _git_set_up
+    _git_set_up test.git
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
     )
@@ -796,7 +803,7 @@ _test_run "Remote git repository deploy with the location to be cloned to exists
 '
 
 _test_run "Remote git repository deploy with the existing repo upstream incorrect" '
-    _git_set_up
+    _git_set_up test.git
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
     )
@@ -816,7 +823,7 @@ _test_run "Remote git repository deploy with the existing repo upstream incorrec
 '
 
 _test_run "Remote git repository deploy with the existing repo upstream being dead" '
-    _git_set_up
+    _git_set_up test.git
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
     )
@@ -833,11 +840,7 @@ _test_run "Remote git repository deploy with the existing repo upstream being de
 '
 
 _test_run "Remote git repository deploy with reference specified" '
-    _git_set_up
-    _git_commit 5/6 6 6
-    _git_checkout develop
-    _git_commit 7/8 8 8
-    _git_checkout master
+    _git_set_up test.git
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile1.__SRC"
         "dotsrepo/__DOTDIR/.dotfile2.__SRC"
@@ -846,6 +849,13 @@ _test_run "Remote git repository deploy with reference specified" '
         "dotsrepo/__DOTDIR/.dotfile5.__SRC"
     )
     _make_layer "${repo_layer[@]}"
+    (
+    cd test.git
+    _git_commit 5/6 6 6
+    _git_checkout develop
+    _git_commit 7/8 8 8
+    _git_checkout master
+    )
     echo "test1::git+file://$TEST_FIELD/test.git#tag=v0.1" > "dotsrepo/__DOTDIR/.dotfile1.__SRC"
     echo "test2::git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile2.__SRC"
     echo "test3::git+file://$TEST_FIELD/test.git#commit=$(cd test.git;git rev-parse --short v0.1~)" > "dotsrepo/__DOTDIR/.dotfile3.__SRC"
@@ -864,22 +874,25 @@ _test_run "Remote git repository deploy with reference specified" '
 '
 
 _test_run "Remote git repository deploy with updated remote branch reference" '
-    _git_set_up
+    _git_set_up test.git
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile.__SRC"
     )
     _make_layer "${repo_layer[@]}"
     echo "git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile.__SRC"
     dotploy.sh deploy "dotsrepo" "dotsdest"
+    (
+    cd test.git
     _git_checkout develop
     _git_commit 5/6 6 6
     _git_checkout master
+    )
     dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/test.dotfile;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
 '
 
 _test_run "Remote git repository deploy with updated remote branch reference and local changes" '
-    _git_set_up
+    _git_set_up test.git
     repo_layer=(
         "dotsrepo/__DOTDIR/.dotfile1.__SRC"
         "dotsrepo/__DOTDIR/.dotfile2.__SRC"
@@ -894,9 +907,12 @@ _test_run "Remote git repository deploy with updated remote branch reference and
     echo "git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile4.__SRC"
     echo "git+file://$TEST_FIELD/test.git#branch=develop" > "dotsrepo/__DOTDIR/.dotfile5.__SRC"
     dotploy.sh deploy "dotsrepo" "dotsdest"
+    (
+    cd test.git
     _git_checkout develop
     _git_commit 5/6 6 6
     _git_checkout master
+    )
     # local has unstaged chagnes
     (
         exec &>/dev/null
