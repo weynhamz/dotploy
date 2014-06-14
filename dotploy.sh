@@ -290,10 +290,8 @@ ensure_source() {
 
 ensure_source_git() (
     local src=$(get_src "$1")
-
-    mkdir -p $CONFDIR/vcs/
-
     local dir=$(get_dir "$1")
+
     local url=$(get_url "$src")
     url=${url##*git+}
     url=${url##*file:\/\/}
@@ -314,8 +312,11 @@ ensure_source_git() (
         if [[ -e "$dir" ]] && { [[ ! -d "$dir" ]] || { [[ -d "$dir" ]] && ! _is_dir_empty "$dir"; }; }
         then
             printw "'$dir' is already there, backup to '$BAKPATH'."
-            mkdir -p $BAKPATH && mv $dir $BAKPATH
+            local bakdir=$BAKPATH/$(dirname "${dir##$DESTHOME/}")
+            mkdir -p "$bakdir" && print "$(mv -v $dir $bakdir)"
         fi
+
+        mkdir -p $CONFDIR/vcs/
 
         if ! git clone --quiet "$url" "$dir"
         then
