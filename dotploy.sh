@@ -400,8 +400,14 @@ ensure_source_local() (
 _prune() {
     local logfile=$1
 
+    sort -u $logfile -o $logfile
+
     local file
     for file in $(cat $logfile); do
+        [[ ! -h $file ]] && {
+            sed -i "/^${file//\//\\\/}$/d" $logfile
+        }
+
         _check $file
 
         [[ $? -eq 1 ]] && {
@@ -532,10 +538,6 @@ _deploy() {
         then
             _symlink $dotdir $dstdir $file
         fi
-
-        grep "^$dstdir/$file\$" $LOGFILE >/dev/null 2>&1
-
-        [[ $? -ne 0 ]] && echo "$dstdir/$file" >> $LOGFILE
     done
 
     print 'LEAVE:'$'\t'"$dotdir"
@@ -632,6 +634,10 @@ _symlink() {
         print "$(ln -v -s $src $dst)"
         DEPTH=$(( $DEPTH - 1 ))
         DEPTH=$(( $DEPTH - 1 ))
+
+        grep "^$dst\$" $LOGFILE >/dev/null 2>&1
+
+        [[ $? -ne 0 ]] && echo "$dst" >> $LOGFILE
     }
 }
 
@@ -692,15 +698,8 @@ doremove() {
 }
 
 dodeploy() {
-    CONFDIR=$DESTHOME/.dotploy
-
-    mkdir -p $CONFDIR || exit 1
-
     # backup location, categarized by date
     BAKPATH=$CONFDIR/backup/`date +%Y%m%d.%H.%M.%S`
-
-    # keep a record of the deployed files
-    LOGFILE=$CONFDIR/filelog
 
     # transform old backup sctruction to the new one
     [[ -d $DOTSHOME/__BACKUP/$HOST ]] && {
@@ -879,5 +878,12 @@ DESTHOME=$(realpath ${2:-${DESTHOME:-$HOME}})
 
 # make sure our destination is there
 [[ -d $DESTHOME ]] || die "$DESTHOME is not available"
+
+CONFDIR=$DESTHOME/.dotploy
+
+mkdir -p $CONFDIR || exit 1
+
+# keep a record of the deployed files
+LOGFILE=$CONFDIR/filelog
 
 do$ACTION
