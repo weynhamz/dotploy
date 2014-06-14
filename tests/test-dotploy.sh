@@ -738,7 +738,7 @@ _test_run "Remote git repository deploy with different HEAD and local changes" '
     (
         exec &>/dev/null
         cd dotsdest/.dotploy/vcs/test.dotfile4
-        git co -b test
+        git checkout -b test
         touch test
         git add test
         git commit -m "test"
@@ -747,7 +747,7 @@ _test_run "Remote git repository deploy with different HEAD and local changes" '
     (
         exec &>/dev/null
         cd dotsdest/.dotploy/vcs/test.dotfile5
-        git co HEAD~
+        git checkout HEAD~
         touch test
         git add test
         git commit -m "test"
@@ -921,7 +921,7 @@ _test_run "Remote git repository deploy with updated remote branch reference and
     (
         exec &>/dev/null
         cd dotsdest/.dotploy/vcs/test.dotfile4
-        git co -b test
+        git checkout -b test
         touch test
         git add test
         git commit -m "test"
@@ -930,7 +930,7 @@ _test_run "Remote git repository deploy with updated remote branch reference and
     (
         exec &>/dev/null
         cd dotsdest/.dotploy/vcs/test.dotfile5
-        git co HEAD~
+        git checkout HEAD~
         touch test
         git add test
         git commit -m "test"
