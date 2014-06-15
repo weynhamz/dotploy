@@ -311,9 +311,13 @@ ensure_source_git() (
     else
         if [[ -e "$dir" ]] && { [[ ! -d "$dir" ]] || { [[ -d "$dir" ]] && ! _is_dir_empty "$dir"; }; }
         then
-            printw "'$dir' is already there, backup to '$BAKPATH'."
+            DEPTH=$(( $DEPTH + 1 ))
+            print 'BACKUP:'$'\t'"$dir"
+            DEPTH=$(( $DEPTH + 1 ))
             local bakdir=$BAKPATH/$(dirname "${dir##$DESTHOME/}")
             mkdir -p "$bakdir" && print "$(mv -v $dir $bakdir)"
+            DEPTH=$(( $DEPTH - 1 ))
+            DEPTH=$(( $DEPTH - 1 ))
         fi
 
         mkdir -p $CONFDIR/vcs/

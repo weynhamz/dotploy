@@ -827,7 +827,6 @@ _test_run "Remote git repository deploy with the location to be cloned to exists
     )
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     bakdir=dotsdest/.dotploy/backup/$(ls -1 --color=none dotsdest/.dotploy/backup)
-    _test_expect_match "$output" "Warning: '\''$TEST_FIELD/dotsdest/.dotploy/vcs/$dir'\'' is already there, backup to '\''$TEST_FIELD/$bakdir'\''."
     _test_expect_exists $bakdir/.dotploy/vcs/$dir
 '
 
@@ -848,7 +847,6 @@ _test_run "Remote git repository deploy with the existing repo upstream incorrec
     )
     output=$(dotploy.sh deploy "dotsrepo" "dotsdest" 2>&1) && echo "$output"
     bakdir=dotsdest/.dotploy/backup/$(ls -1 --color=none dotsdest/.dotploy/backup)
-    _test_expect_match "$output" "Warning: '\''$TEST_FIELD/dotsdest/.dotploy/vcs/$dir'\'' is already there, backup to '\''$TEST_FIELD/$bakdir'\''."
     _test_expect_directory $bakdir/.dotploy/vcs/$dir
 '
 
