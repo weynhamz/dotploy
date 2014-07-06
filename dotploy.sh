@@ -162,7 +162,7 @@ get_src() {
 
 # Directory to store the VCS source
 get_dir() {
-    mkdir -p $CONFDIR/vcs/
+    _mkdir $CONFDIR/vcs/
 
     echo $CONFDIR/vcs/$(get_src "$1" | md5sum - | cut -d ' ' -f 1)
 }
@@ -315,12 +315,13 @@ ensure_source_git() (
             print 'BACKUP:'$'\t'"$dir"
             DEPTH=$(( $DEPTH + 1 ))
             local bakdir=$BAKPATH/$(dirname "${dir##$DESTHOME/}")
-            mkdir -p "$bakdir" && print "$(mv -v $dir $bakdir)"
+            _mkdir "$bakdir"
+            print "$(mv -v $dir $bakdir)"
             DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
         fi
 
-        mkdir -p $CONFDIR/vcs/
+        _mkdir $CONFDIR/vcs/
 
         if ! git clone --quiet "$url" "$dir"
         then
@@ -393,6 +394,22 @@ ensure_source_local() (
 
     true
 )
+
+_mkdir() {
+    local dir=$1
+
+    if [[ ! -d $dir ]]
+    then
+        print $'MKDIR:\t'"$dir"
+        mkdir -p "$dir"
+    fi
+
+    if [[ ! -d $dir ]]
+    then
+        printe "Failed to create directory $dir"
+        exit 1
+    fi
+}
 
 #
 # Function: _prune
@@ -590,15 +607,13 @@ _symlink() {
             DEPTH=$(( $DEPTH + 1 ))
             print 'BACKUP:'$'\t'"$DESTHOME/$repath"
             DEPTH=$(( $DEPTH + 1 ))
-            print "$(mkdir -vp $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
+            _mkdir "$BAKPATH/$(dirname "$repath")"
+            print "$(mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
             DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
         }
         DEPTH=$(( $DEPTH + 1 ))
-        print $'MKDIR:\t'"$DESTHOME/$repath"
-        DEPTH=$(( $DEPTH + 1 ))
-        print "$(mkdir -vp $DESTHOME/$repath)"
-        DEPTH=$(( $DEPTH - 1 ))
+        _mkdir "$DESTHOME/$repath"
         DEPTH=$(( $DEPTH - 1 ))
     }
 
@@ -622,7 +637,8 @@ _symlink() {
             DEPTH=$(( $DEPTH + 1 ))
             print 'BACKUP:'$'\t'"$dst"
             DEPTH=$(( $DEPTH + 1 ))
-            print "$(mkdir -vp $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
+            _mkdir "$BAKPATH/$repath"
+            print "$(mv -v $dst $BAKPATH/$repath)"
             DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
         } || {
@@ -675,7 +691,7 @@ doadd() {
     local file=$(basename $rpath)
 
     #move the target to the destination
-    mkdir -p "$dest/${rpath%%$file}"
+    _mkdir "$dest/${rpath%%$file}"
     mv "$TARGET" "$dest/${rpath%%$file}"
 
     [[ $rpath == $file ]] || {
@@ -886,7 +902,7 @@ DESTHOME=$(realpath ${2:-${DESTHOME:-$HOME}})
 
 CONFDIR=$DESTHOME/.dotploy
 
-mkdir -p $CONFDIR || exit 1
+_mkdir $CONFDIR
 
 # keep a record of the deployed files
 LOGFILE=$CONFDIR/filelog
