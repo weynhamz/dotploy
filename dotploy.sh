@@ -74,7 +74,7 @@ fi
 
 _git_is_ref_valid() {
     local ref=${1:-ref not set}
-    git show-ref --verify --quiet $ref
+    git show-ref --verify --quiet $ref || [[ $(git cat-file -t $ref) == commit ]]
 }
 
 _git_has_local_change() {
