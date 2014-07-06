@@ -134,15 +134,31 @@ print() {
     then
         indent=$(printf '\t%.0s' $(seq 1 $(($DEPTH -1))))
     fi
-    [[ $OPT_VERBOSE -eq 1 ]] && [[ -n "$1" ]] && echo "$1" | sed "s/^/$indent/g"
+    [[ $OPT_VERBOSE -eq 1 ]] && [[ -n "$1" ]] && echo -e "$1" | sed "s/^/$indent/g"
 }
+
+printn() (
+    [[ $OPT_VERBOSE -eq 1 ]] && {
+        [[ -n "$1" ]] && print "$1"
+    } || {
+        [[ -n "$1" ]] && echo -e "$1"
+    }
+)
+
+printh() (
+    [[ $OPT_VERBOSE -eq 1 ]] && {
+        [[ -n "$1" ]] && print "\e[1;37m$1\e[0m"
+    } || {
+        [[ -n "$1" ]] && echo -e "\e[1;37m$1\e[0m"
+    }
+)
 
 printe() (
     exec 1>&2
     [[ $OPT_VERBOSE -eq 1 ]] && {
         [[ -n "$1" ]] && print "ERROR: $1"
     } || {
-        [[ -n "$1" ]] && echo "ERROR: $1"
+        [[ -n "$1" ]] && echo -e "ERROR: $1"
     }
 )
 
@@ -151,7 +167,7 @@ printw() (
     [[ $OPT_VERBOSE -eq 1 ]] && {
         [[ -n "$1" ]] && print "Warning: $1"
     } || {
-        [[ -n "$1" ]] && echo "Warning: $1"
+        [[ -n "$1" ]] && echo -e "Warning: $1"
     }
 )
 
@@ -312,11 +328,11 @@ ensure_source_git() (
         if [[ -e "$dir" ]] && { [[ ! -d "$dir" ]] || { [[ -d "$dir" ]] && ! _is_dir_empty "$dir"; }; }
         then
             DEPTH=$(( $DEPTH + 1 ))
-            print 'BACKUP:'$'\t'"$dir"
+            printh 'BACKUP:'$'\t'"$dir"
             DEPTH=$(( $DEPTH + 1 ))
             local bakdir=$BAKPATH/$(dirname "${dir##$DESTHOME/}")
             _mkdir "$bakdir"
-            print "$(mv -v $dir $bakdir)"
+            printn "$(mv -v $dir $bakdir)"
             DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
         fi
@@ -605,10 +621,10 @@ _symlink() {
         # backup if the target already exits
         [[ -f "$DESTHOME/$repath" ]] && {
             DEPTH=$(( $DEPTH + 1 ))
-            print 'BACKUP:'$'\t'"$DESTHOME/$repath"
+            printh 'BACKUP:'$'\t'"$DESTHOME/$repath"
             DEPTH=$(( $DEPTH + 1 ))
             _mkdir "$BAKPATH/$(dirname "$repath")"
-            print "$(mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
+            printn "$(mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
             DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
         }
@@ -624,7 +640,7 @@ _symlink() {
     # remove broken link
     [[ $status -eq 1 ]] && {
         DEPTH=$(( $DEPTH + 1 ))
-        print 'REMOVE:'$'\t'"$dst"
+        printh 'REMOVE:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(rm -v $dst)"
         DEPTH=$(( $DEPTH - 1 ))
@@ -635,10 +651,10 @@ _symlink() {
     [[ $status -eq 2 ]] && {
         [[ $OPT_FORCE = 1 ]] && {
             DEPTH=$(( $DEPTH + 1 ))
-            print 'BACKUP:'$'\t'"$dst"
+            printh 'BACKUP:'$'\t'"$dst"
             DEPTH=$(( $DEPTH + 1 ))
             _mkdir "$BAKPATH/$repath"
-            print "$(mv -v $dst $BAKPATH/$repath)"
+            printn "$(mv -v $dst $BAKPATH/$repath)"
             DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
         } || {
@@ -650,9 +666,9 @@ _symlink() {
     # symlink the file in the repo
     [[ $status -ne 0 ]] && [[ $status -ne 4 ]] && {
         DEPTH=$(( $DEPTH + 1 ))
-        print 'LINK:'$'\t'"$dst"
+        printh 'LINK:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
-        print "$(ln -v -s $src $dst)"
+        printn "$(ln -v -s $src $dst)"
         DEPTH=$(( $DEPTH - 1 ))
         DEPTH=$(( $DEPTH - 1 ))
 
