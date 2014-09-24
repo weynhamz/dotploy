@@ -287,6 +287,14 @@ get_fragment() {
 }
 
 ensure_source() {
+    declare -a ensured
+
+    if [[ " ${arr[*]} " == *" $1 "* ]]; then
+        return
+    fi
+
+    ensured+=("$1")
+
     local src=$(get_src "$1")
 
     local proto=$(get_protocol "$src")
