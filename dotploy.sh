@@ -736,10 +736,18 @@ doremove() {
     #check if our target is linking to our dots repo
     [[ $(readlink -fm $TARGET) =~ $DOTSREPO/.* ]] || die "target not link to our repo"
 
-    #remove the link and copy the original file
-    local from=$(readlink -fm $TARGET)
-    local to=$(dirname $TARGET)
-    rm $TARGET && cp -rf $from $to
+    local src=$(readlink -fm $TARGET)
+
+    #remove the link
+    rm -v $TARGET
+
+    [[ $OPT_FORCE == 0 ]] && {
+        #copy the original file
+        cp -v -rf $src $(dirname $TARGET)
+    } || {
+        #remove the original file
+        rm -v -rf $src
+    }
 }
 
 dodeploy() {
