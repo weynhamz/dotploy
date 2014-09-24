@@ -903,6 +903,7 @@ _test_run "Remote git repository deploy with reference specified" '
     _test_expect_symlink "dotsdest/.dotfile3" "$TEST_FIELD/dotsdest/.dotploy/vcs/$dir3"
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/$dir3;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short v0.1~)"
     _test_expect_symlink "dotsdest/.dotfile4" "$TEST_FIELD/dotsdest/.dotploy/vcs/$dir4/5/6"
+    _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/$dir4;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short master)"
     _test_expect_symlink "dotsdest/.dotfile5" "$TEST_FIELD/dotsdest/.dotploy/vcs/$dir5/7/8"
     _test_expect_expr_true "test $(cd dotsdest/.dotploy/vcs/$dir5;git rev-parse --short HEAD) = $(cd test.git;git rev-parse --short develop)"
 '
