@@ -349,7 +349,7 @@ ensure_source_git() (
     _cd "$dir"
 
     local ref=$(get_fragment "$src"  "ref")
-    if [[ -z $ref ]] || { ! _git_is_ref_valid $ref && ! _git_is_ref_in_remote $ref && printw "$ref is not a valid git ref, use HEAD of origin."; }
+    if [[ -z $ref ]] || { ! _git_is_ref_valid $ref && printw "$ref is not a valid git ref, use HEAD of origin."; }
     then
         #keep the head in sync with the remote
         ref=refs/remotes/origin/HEAD
