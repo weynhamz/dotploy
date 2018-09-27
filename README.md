@@ -70,7 +70,7 @@ How To Use it?
 
         dotploy.sh deploy [--force] <path_to_the_dotfiles_repo> [<destination_of_the_deployment>]
 
-            Deploy the dots repo the the destination
+            Deploy the dots repo to the destination
 
     Options:
 
