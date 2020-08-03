@@ -467,7 +467,10 @@ _prune() {
             DEPTH=$(( $DEPTH + 1 ))
             print 'UPDATE:'$'\t'"$file"
             DEPTH=$(( $DEPTH + 1 ))
-            print "$(rm -v $file)"
+            if [[ $OPT_DRY_RUN != 1 ]]
+            then
+                print "$(rm -v $file)"
+            fi
             DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
         }
@@ -638,13 +641,18 @@ _symlink() {
             DEPTH=$(( $DEPTH + 1 ))
             printh 'BACKUP:'$'\t'"$DESTHOME/$repath"
             DEPTH=$(( $DEPTH + 1 ))
-            _mkdir "$BAKPATH/$(dirname "$repath")"
-            printn "$(mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
+            if [[ $OPT_DRY_RUN != 1 ]]
+            then
+                print "$(_mkdir $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
+            fi
             DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
         }
         DEPTH=$(( $DEPTH + 1 ))
-        print "$(_mkdir $DESTHOME/$repath)"
+        if [[ $OPT_DRY_RUN != 1 ]]
+        then
+            print "$(_mkdir $DESTHOME/$repath)"
+        fi
         DEPTH=$(( $DEPTH - 1 ))
     }
 
@@ -657,7 +665,10 @@ _symlink() {
         DEPTH=$(( $DEPTH + 1 ))
         debug 'REMOVE:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
-        print "$(rm -v $dst)"
+        if [[ $OPT_DRY_RUN != 1 ]]
+        then
+            print "$(rm -v $dst)"
+        fi
         DEPTH=$(( $DEPTH - 1 ))
         DEPTH=$(( $DEPTH - 1 ))
     }
@@ -668,8 +679,10 @@ _symlink() {
             DEPTH=$(( $DEPTH + 1 ))
             debug 'BACKUP:'$'\t'"$dst"
             DEPTH=$(( $DEPTH + 1 ))
-            _mkdir "$BAKPATH/$repath"
-            printn "$(mv -v $dst $BAKPATH/$repath)"
+            if [[ $OPT_DRY_RUN != 1 ]]
+            then
+                print "$(_mkdir $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
+            fi
             DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
         } || {
@@ -683,7 +696,10 @@ _symlink() {
         DEPTH=$(( $DEPTH + 1 ))
         debug 'LINK:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
-        printn "$(ln -v -s $src $dst)"
+        if [[ $OPT_DRY_RUN != 1 ]]
+        then
+            print "$(ln -v -s $src $dst)"
+        fi
         DEPTH=$(( $DEPTH - 1 ))
         DEPTH=$(( $DEPTH - 1 ))
 
@@ -859,6 +875,7 @@ declare -i OPT_USER=0
 declare -i OPT_HOST=0
 declare -i OPT_FORCE=0
 declare -i OPT_VERBOSE=0
+declare -i OPT_DRY_RUN=0
 declare -i OPT_VCS_CLEAN=0
 while [[ $# -gt 0 ]]
 do
@@ -871,6 +888,9 @@ do
         ;;
         --force )
             OPT_FORCE=1
+        ;;
+        --dry-run )
+            OPT_DRY_RUN=1
         ;;
         --vcs-clean )
             OPT_VCS_CLEAN=1
