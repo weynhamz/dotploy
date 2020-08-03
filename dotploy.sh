@@ -523,9 +523,14 @@ _check() {
         if [[ "$csrc" == "$src" ]]
         then
             return 0
-        elif [[ $src =~ .*\.__SRC ]] && [[ $csrc == $(get_filepath "$src") ]]
+        elif [[ $src =~ .*\.__SRC ]]
         then
-            return 0
+            if [[ $csrc == $(get_filepath "$src") ]]
+            then
+              return 0
+            else
+              return 2
+            fi
         else
             if [[ $csrc =~ $DOTSHOME ]]
             then
