@@ -518,6 +518,7 @@ _check() {
     if [[ -h $dst ]]
     then
         local csrc=$(readlink $dst)
+        csrc=$(realpath $csrc 2>/dev/null || echo $csrc)
 
         if [[ "$csrc" == "$src" ]]
         then
