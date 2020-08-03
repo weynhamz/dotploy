@@ -128,13 +128,20 @@ IGNORE=(
     ".swp$"
 )
 
-print() {
+debug() {
     local indent
     if [[ $DEPTH -gt 1 ]]
     then
         indent=$(printf '\t%.0s' $(seq 1 $(($DEPTH -1))))
     fi
-    [[ $OPT_VERBOSE -eq 1 ]] && [[ -n "$1" ]] && echo -e "$1" | sed "s/^/$indent/g"
+    [[ $OPT_VERBOSE -eq 1 ]] && {
+        echo -n $indent
+        print $@
+    }
+}
+
+print() {
+    [[ -n "$1" ]] && echo "$1"
 }
 
 printn() (
@@ -549,7 +556,7 @@ _deploy() {
     local dstdir=$2
 
     DEPTH=$(( $DEPTH + 1 ))
-    print 'ENTER:'$'\t'"$dotdir"
+    debug 'ENTER:'$'\t'"$dotdir"
 
     local filelist=$(ls -1A --color=none $dotdir)
 
@@ -586,7 +593,7 @@ _deploy() {
         fi
     done
 
-    print 'LEAVE:'$'\t'"$dotdir"
+    debug 'LEAVE:'$'\t'"$dotdir"
     DEPTH=$(( $DEPTH - 1 ))
 }
 
@@ -637,7 +644,7 @@ _symlink() {
             DEPTH=$(( $DEPTH - 1 ))
         }
         DEPTH=$(( $DEPTH + 1 ))
-        _mkdir "$DESTHOME/$repath"
+        print "$(_mkdir $DESTHOME/$repath)"
         DEPTH=$(( $DEPTH - 1 ))
     }
 
@@ -648,7 +655,7 @@ _symlink() {
     # remove broken link
     [[ $status -eq 1 ]] && {
         DEPTH=$(( $DEPTH + 1 ))
-        printh 'REMOVE:'$'\t'"$dst"
+        debug 'REMOVE:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
         print "$(rm -v $dst)"
         DEPTH=$(( $DEPTH - 1 ))
@@ -659,7 +666,7 @@ _symlink() {
     [[ $status -eq 2 ]] && {
         [[ $OPT_FORCE = 1 ]] && {
             DEPTH=$(( $DEPTH + 1 ))
-            printh 'BACKUP:'$'\t'"$dst"
+            debug 'BACKUP:'$'\t'"$dst"
             DEPTH=$(( $DEPTH + 1 ))
             _mkdir "$BAKPATH/$repath"
             printn "$(mv -v $dst $BAKPATH/$repath)"
@@ -674,7 +681,7 @@ _symlink() {
     # symlink the file in the repo
     [[ $status -ne 0 ]] && [[ $status -ne 4 ]] && {
         DEPTH=$(( $DEPTH + 1 ))
-        printh 'LINK:'$'\t'"$dst"
+        debug 'LINK:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
         printn "$(ln -v -s $src $dst)"
         DEPTH=$(( $DEPTH - 1 ))
