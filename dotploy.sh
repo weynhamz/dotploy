@@ -463,9 +463,9 @@ _prune() {
 
         _check $file
 
-        [[ $? -eq 1 ]] && {
+        [[ $? -eq 5 ]] && {
             DEPTH=$(( $DEPTH + 1 ))
-            print 'UPDATE:'$'\t'"$file"
+            print 'PRUNE:'$'\t'"$file"
             DEPTH=$(( $DEPTH + 1 ))
             if [[ $OPT_DRY_RUN != 1 ]]
             then
@@ -491,6 +491,7 @@ _prune() {
 #   2 need backup
 #   3 not existed, do link
 #   4 do nothing, deploy its contents
+#   5 can not found src
 #
 _check() {
     local src
@@ -508,6 +509,11 @@ _check() {
     [[ -e $DOTSREPO/__HOST.$HOST/$repath.__SRC ]] && src=$DOTSREPO/__HOST.$HOST/$repath.__SRC
     [[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ]] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
     [[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC ]] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC
+
+    # can not find the source
+    [[ -z $src ]] && {
+        return 5
+    }
 
     if [[ -h $dst ]]
     then
