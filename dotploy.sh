@@ -823,9 +823,8 @@ dodeploy() {
         _prune $LOGFILE
     fi
 
-    # host user based dotfies deploy
-    [[ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ]] && \
-        _deploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
+    # shared dotfiles deploy
+    _deploy $DOTSREPO $DESTHOME
 
     # host based dotfies deploy
     [[ -d $DOTSREPO/__HOST.$HOST ]] && \
@@ -835,8 +834,9 @@ dodeploy() {
     [[ -d $DOTSREPO/__USER.$USER ]] && \
         _deploy $DOTSREPO/__USER.$USER $DESTHOME
 
-    # shared dotfiles deploy
-    _deploy $DOTSREPO $DESTHOME
+    # host user based dotfies deploy
+    [[ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ]] && \
+        _deploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
 }
 
 show_help() {
