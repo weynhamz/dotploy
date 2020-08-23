@@ -450,6 +450,15 @@ ensure_source_local() (
     true
 )
 
+_diff() {
+    echo "diff -y --color=always $1 $2"
+    printf '=%.0s' $(seq 1 $((120 -1)))
+    echo
+    diff -y --color=always $1 $2
+    printf '=%.0s' $(seq 1 $((120 -1)))
+    echo
+}
+
 _mkdir() {
     local dir=$1
 
