@@ -66,6 +66,28 @@ fi
 
 # @@BASHLIB END@@
 
+#
+# Colorization
+#
+
+nrmred='\e[0;31m'          # normal red
+nrmgrn='\e[0;32m'          # normal green
+nrmylw='\e[0;33m'          # normal yellow
+nrmblu='\e[0;34m'          # normal blue
+nrmpur='\e[0;35m'          # normal purple
+nrmcyn='\e[0;36m'          # normal cyan
+nrmwht='\e[0;37m'          # normal white
+bldred='\e[1;31m'          # blod red
+bldgrn='\e[1;32m'          # blod green
+bldylw='\e[1;33m'          # blod yellow
+bldblu='\e[1;34m'          # blod blue
+bldpur='\e[1;35m'          # blod purple
+bldcyn='\e[1;36m'          # blod cyan
+bldwht='\e[1;37m'          # blod white
+txtbld=$(tput bold)        # bold
+txtund=$(tput sgr 0 1)     # underline
+txtrst='\e[0m'             # reset text
+
 ###############################################################################
 #
 # Git Wrappers
@@ -141,7 +163,9 @@ debug() {
 }
 
 print() {
+    [[ -n "$2" ]] && echo -e $2
     [[ -n "$1" ]] && echo "$1"
+    [[ -n "$2" ]] && echo -e $txtrst
 }
 
 printn() (
