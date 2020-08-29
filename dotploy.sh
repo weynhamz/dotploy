@@ -558,10 +558,14 @@ _check() {
             return 0
         elif [[ $src =~ .*\.__SRC ]]
         then
-            if [[ $csrc == $(get_filepath "$src") ]]
+            src=$(get_filepath "$src")
+            src=$(realpath $src 2>/dev/null || echo $src)
+            if [[ $csrc == $src ]]
             then
               return 0
             else
+                echo csrc $csrc
+                echo aaa $src
               return 2
             fi
         else
@@ -860,16 +864,22 @@ dodeploy() {
     _deploy $DOTSREPO $DESTHOME
 
     # host based dotfies deploy
-    [[ -d $DOTSREPO/__HOST.$HOST ]] && \
+    if [[ -d $DOTSREPO/__HOST.$HOST ]]
+    then
         _deploy $DOTSREPO/__HOST.$HOST $DESTHOME
+    fi
 
     # user based dotfies deploy
-    [[ -d $DOTSREPO/__USER.$USER ]] && \
+    if [[ -d $DOTSREPO/__USER.$USER ]]
+    then
         _deploy $DOTSREPO/__USER.$USER $DESTHOME
+    fi
 
     # host user based dotfies deploy
-    [[ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ]] && \
+    if [[ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ]]
+    then
         _deploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
+    fi
 }
 
 show_help() {
