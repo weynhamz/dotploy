@@ -66,6 +66,153 @@ fi
 
 # @@BASHLIB END@@
 
+# Function: die
+#
+#    Show an error message and exit
+#
+# Arguments:
+#
+#    $1: message to show
+#    $2: exit value
+#
+die() {
+  echo_error "$1" >&2
+  exit "${2:-1}"
+}
+
+# Function: in_array
+#
+#    Whether an elememt belongs to an array
+#
+# Arguments:
+#
+#    $1: element to check
+#
+in_array() {
+  local e
+  for e in "${@:2}"; do [[ $e == $1 ]] && return 0; done
+  return 1
+}
+
+# Function: interactive_select
+#
+#    Wrapper function to construct a selection menu
+#
+# Arguments:
+#
+#    $1: variable name where the result to be assigned
+#    $2: variable name of an associative array where the
+#        readable information for the item comes from
+#    $3: prompt message shown at the begining
+#    $-: the rest arguments are the items for selection,
+#        also the keys for the associative array of $2
+#
+# option, options, result, source, prompt, arguments, arguments_count is preserved for variable name
+interactive_select() {
+  local refvar
+  local option
+  local options
+  local result=$1 && shift
+  local source=$1 && shift
+  local prompt=$1 && shift
+  local arguments=("$@")
+  local arguments_count=$#
+
+  # if the variable name of the associative array which
+  # stores the readable infomation for the items is given,
+  # then we translate all the positional parameters to their
+  # readable form.
+  [[ -n $source ]] && {
+    declare -a options
+    while [ $# -gt 0 ]
+    do
+      # we use the indirect reference to get the value
+      # for a specified key of an associative array
+      refvar="$source[$1]"
+      options[$(($arguments_count - $#))]=${!refvar:-$1}
+      # parse next argument
+      shift
+    done
+    # reset the positional parameters
+    set -- "${options[@]}" '-- RETURN --'
+  }
+
+  echo_bold "$prompt"
+  select option
+  do
+    if [[ -z $option ]]
+    then
+      die "ERROR: Invalid selection -- ABORTING!"
+    fi
+    if [[ $option == '-- RETURN --' ]]
+    then
+      echo
+      return 1
+    fi
+    break
+  done
+  echo
+
+  pos=''
+
+  eval "pos=\$(expr \${REPLY} - 1) || true"
+
+  eval "$result=\${arguments[$pos]}"
+
+# there is a bug if the aurement is a number
+
+#  eval "$result=\${arguments[\$(expr \${REPLY} - 1)]}"
+
+  return 0
+}
+
+# Function: interactive_confirm
+#
+#    Wrapper function to construct a confirmation
+#
+# Arguments:
+#
+#    $1: prompt message shown at the begining
+#    $2: exit on rejection? Optional.
+#
+interactive_confirm() {
+  local confirm
+  local prompt=$1 && shift
+  declare -i rejdie=$1 && shift
+
+  echo_bold "$prompt"
+  echo -n "(YES to continue) "
+  read confirm
+  echo
+
+  if [[ $(echo "$confirm" | tr '[:lower:]' '[:upper:]') != YES ]]
+  then
+    [[ $rejdie -eq 1 ]] && die "ERROR: Confirmation failed -- ABORTING!"
+    return 1
+  else
+    return 0
+  fi
+}
+
+# Function: interactive_readvar
+#
+#    Wrapper function to read value to a variable
+#
+# Arguments:
+#
+#    $1: variable name where to assign the result
+#    $2: prompt information shown at the begining
+#
+interactive_readvar() {
+  local result=$1 && shift
+  local prompt=$1 && shift
+  echo_bold "$prompt"
+  local var
+  read var
+  echo
+  eval "$result=\$var"
+}
+
 #
 # Colorization
 #
@@ -87,6 +234,15 @@ bldwht='\e[1;37m'          # blod white
 txtbld=$(tput bold)        # bold
 txtund=$(tput sgr 0 1)     # underline
 txtrst='\e[0m'             # reset text
+
+
+echo_bold() {
+  echo -e ${txtbld}$@${txtrst}
+}
+
+echo_error() {
+  echo -e ${bldred}$@${txtrst}
+}
 
 ###############################################################################
 #
@@ -146,6 +302,7 @@ IGNORE=(
     "^__HOST"
     "^__KEEPED"
     "^__IGNORE"
+    "^__CATE"
     "^.git$"
     ".swp$"
 )
@@ -204,14 +361,19 @@ printw() (
 
 # Abtain the record to the source
 get_src() {
-    head -1 $1
+    if [[ $1 =~ .*\.__SRC ]]
+    then
+        head -1 $1
+    else
+        echo $1
+    fi
 }
 
 # Directory to store the VCS source
 get_dir() {
-    _mkdir $CONFDIR/vcs/
+    mkdir -p $CONFDIR/vcs/ &>/dev/null
 
-    echo $CONFDIR/vcs/$(get_src "$1" | md5sum - | cut -d ' ' -f 1)
+    echo $CONFDIR/vcs/$(echo "$1" | md5sum - | cut -d ' ' -f 1)
 }
 
 # extract the URL from a source entry
@@ -272,9 +434,9 @@ get_filepath() {
         git*)
             if [[ -n $file ]]
             then
-                echo $(get_dir "$1")/$file
+                echo $(get_dir $src)/$file
             else
-                echo $(get_dir "$1")
+                echo $(get_dir $src)
             fi
             ;;
         local)
@@ -318,34 +480,38 @@ get_fragment() {
 }
 
 ensure_source() {
+    local src=$1
+
     declare -a ensured
 
-    if [[ " ${arr[*]} " == *" $1 "* ]]; then
+    if [[ " ${arr[*]} " == *" $src "* ]]; then
         return
     fi
 
-    ensured+=("$1")
-
-    local src=$(get_src "$1")
+    ensured+=("$src")
 
     local proto=$(get_protocol "$src")
     case "$proto" in
         git*)
-            ensure_source_git "$1"
+            ensure_source_git "$src"
             ;;
         local)
-            ensure_source_local "$1"
+            ensure_source_local "$src"
             ;;
         *)
             printe "Unkown protocol $proto ..."
             exit 1
             ;;
     esac
+
+    get_filepath $src
 }
 
 ensure_source_git() (
-    local src=$(get_src "$1")
-    local dir=$(get_dir "$1")
+    local src=$1
+    local dir=$(get_dir "$src")
+
+    mkdir -p $CONFDIR/vcs/
 
     local url=$(get_url "$src")
     url=${url##*git+}
@@ -444,9 +610,7 @@ ensure_source_git() (
 )
 
 ensure_source_local() (
-    local src=$(get_src "$1")
-    local url=$(get_url "$src")
-
+    # TODO check for existance
     true
 )
 
@@ -498,8 +662,8 @@ _prune() {
 
         [[ $? -eq 5 ]] && {
             DEPTH=$(( $DEPTH + 1 ))
-            print 'PRUNE:'$'\t'"$file"
             DEPTH=$(( $DEPTH + 1 ))
+            [[ $status -eq 0 ]] && need_prune+=("$file")
             if [[ $OPT_DRY_RUN != 1 ]]
             then
                 print "$(rm -v $file)"
@@ -637,11 +801,11 @@ _deploy() {
                 # deploy its contents.
                 _deploy $dotdir/$file $dstdir/$file
             else
-                _symlink $dotdir $dstdir $file
+                plan[$dstdir/${file%%.__SRC}]=$dotdir/$file
             fi
         elif [[ -f $dotdir/$file ]]
         then
-            _symlink $dotdir $dstdir $file
+            plan[$dstdir/${file%%.__SRC}]=$dotdir/$file
         fi
     done
 
@@ -659,28 +823,28 @@ _deploy() {
 # Parameters:
 #   $1  source directory where the dotfile is located
 #   $2  target directory where the dotfile will be deployed
-#   $3  filename of the dotfile
 #
 _symlink() {
-    local src
-    local dst
+    local src=$1
+    local dst=$2
 
-    [[ $3 =~ ^.*.__SRC$ ]] && {
-        ensure_source "$1/$3" || return
-        src=$(get_filepath "$1/$3")
-        dst=${2%%/}/${3%%.__SRC}
-    } || {
-        src=${1%%/}/$3
-        dst=${2%%/}/$3
+    [[ $src =~ ^.*.__SRC$ ]] && {
+        ensure_source "$(get_src "$1")" || return
+        src=$(get_filepath "$1")
+        dst=${2}
     }
 
     local repath
 
-    repath=${1#$DOTSREPO}
+    repath=$src
+    repath=$(echo $repath | sed 's/[^/]\+$//')
+    repath=${repath#$DOTSREPO}
     repath=${repath#/}
     repath=${repath#__HOST.$HOST}
     repath=${repath#/}
     repath=${repath#__USER.$USER}
+    repath=${repath#/}
+    repath=$(echo $repath | sed 's/^__CATE\.[^/]\+//')
     repath=${repath#/}
 
     # for nested path, need to mkdir parent first
@@ -855,10 +1019,22 @@ dodeploy() {
         echo "Transition done."
     }
 
+declare -a need_prune
+
     if [[ -f $LOGFILE ]]
     then
         _prune $LOGFILE
     fi
+
+declare -A plan
+
+    for cate in "${OPT_CATE[@]}"
+    do
+        if [[ -d $DOTSREPO/__CATE.$cate ]]
+        then
+            _deploy $DOTSREPO/__CATE.$cate $DESTHOME
+        fi
+    done
 
     # shared dotfiles deploy
     _deploy $DOTSREPO $DESTHOME
@@ -880,6 +1056,141 @@ dodeploy() {
     then
         _deploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
     fi
+
+declare -a all_good
+declare -a need_update
+declare -a need_backup
+declare -a need_link
+declare -a deploy_contents
+declare -a remove
+
+for K in "${!plan[@]}"
+do
+#    echo $K
+#    echo ${plan[$K]}
+    _check $K
+
+    local status=$?
+
+    # remove broken link
+    [[ $status -eq 0 ]] && all_good+=("$K")
+    [[ $status -eq 1 ]] && need_update+=("$K")
+    [[ $status -eq 2 ]] && need_backup+=("$K")
+    [[ $status -eq 3 ]] && need_link+=("$K")
+    [[ $status -eq 4 ]] && deploy_contents+=("$K")
+    [[ $status -eq 5 ]] && remove+=("$K")
+done
+
+print ">>>>>>> ALL GOOD" $bldblu
+for i in "${all_good[@]}"
+do
+    print $i $txtbld
+done
+
+print ">>>>>>> NEED UPDATE" $bldblu
+for i in "${need_update[@]}"
+do
+    print $i $txtbld
+
+    local csrc=$(readlink $i)
+    echo CURRENT: $csrc
+    echo should be: ${plan[$i]}
+    csrc=$(realpath $csrc 2>/dev/null || echo $csrc)
+    _diff $csrc ${plan[$i]}
+    if interactive_confirm "Proceed?"
+    then
+        echo ${plan[$i]}
+        echo $i
+        _symlink ${plan[$i]} $i
+    fi
+done
+
+print ">>>>>>> NEED BACKUP" $bldblu
+for i in "${need_backup[@]}"
+do
+    print $i $txtbld
+
+    dst=$i
+    src=${plan[$i]}
+    if [[ $src =~ .*\.__SRC ]]
+    then
+        src=$(get_filepath "$src")
+    fi
+
+    if [[ -h $dst ]]
+    then
+        echo CURRENT: $(readlink $dst)
+        echo should be: $src
+    elif [[ -f $dst ]]
+    then
+        echo "dst: $(md5sum $dst)"
+        echo "src: $(md5sum $src)"
+
+        _diff $dst $src
+
+        # todo if md5sum is the same, no need to backup
+    else
+        echo CURRENT: $dst
+        echo should be: $src
+    fi
+
+    if interactive_confirm "Proceed?"
+    then
+        echo ${plan[$i]}
+        echo $i
+        _symlink ${plan[$i]} $i
+    fi
+done
+
+print ">>>>>>> NEED LINK" $bldblu
+for i in "${need_link[@]}"
+do
+    print $i $txtbld
+
+    if interactive_confirm "Proceed?"
+    then
+        echo ${plan[$i]}
+        echo $i
+        _symlink ${plan[$i]} $i
+    fi
+done
+
+print ">>>>>>> NEED CONTENT" $bldblu
+for i in "${deploy_contents[@]}"
+do
+    print $i $txtbld
+
+    if interactive_confirm "Proceed?"
+    then
+        echo ${plan[$i]}
+        echo $i
+        _symlink ${plan[$i]} $i
+    fi
+done
+
+print ">>>>>>> NEED REMOVE" $bldblu
+for i in "${remove[@]}"
+do
+    print $i $txtbld
+
+    if interactive_confirm "Proceed?"
+    then
+        echo ${plan[$i]}
+        echo $i
+        _symlink ${plan[$i]} $i
+    fi
+done
+for i in "${need_prune[@]}"
+do
+    print $i $txtbld
+
+    if interactive_confirm "Proceed?"
+    then
+        echo ${plan[$i]}
+        echo $i
+        _symlink ${plan[$i]} $i
+    fi
+done
 }
 
 show_help() {
@@ -928,6 +1239,7 @@ declare -a args
 declare -i DEPTH=0
 declare -i OPT_USER=0
 declare -i OPT_HOST=0
+declare -a OPT_CATE
 declare -i OPT_FORCE=0
 declare -i OPT_VERBOSE=0
 declare -i OPT_DRY_RUN=0
@@ -940,6 +1252,10 @@ do
         ;;
         --host )
             OPT_HOST=1
+        ;;
+        --cate )
+            OPT_CATE+=("$2")
+            shift
         ;;
         --force )
             OPT_FORCE=1
@@ -997,18 +1313,6 @@ case "$ACTION" in
         ;;
 esac
 
-[[ -f "$HOME/.dotploy/config" ]] && source $HOME/.dotploy/config
-
-DOTSHOME=$(realpath ${1:-$DOTSHOME})
-
-# make sure our destination is there
-[[ -d $DOTSHOME ]] || die "$DOTSHOME is not available"
-
-DOTSREPO=$DOTSHOME/__DOTDIR
-
-# die if it is not a dotsrepo
-[[ -d $DOTSREPO ]] || die "$DOTSREPO is not available"
-
 DESTHOME=$(realpath ${2:-${DESTHOME:-$HOME}})
 
 # make sure our destination is there
@@ -1018,7 +1322,19 @@ CONFDIR=$DESTHOME/.dotploy
 
 _mkdir $CONFDIR
 
+[[ -f "$CONFDIR/config" ]] && source $CONFDIR/config
+
 # keep a record of the deployed files
 LOGFILE=$CONFDIR/filelog
+
+DOTSHOME=$(ensure_source $1)
+
+# make sure our destination is there
+[[ -d $DOTSHOME ]] || die "$DOTSHOME is not available"
+
+DOTSREPO=$(realpath $DOTSHOME/__DOTDIR)
+
+# die if it is not a dotsrepo
+[[ -d $DOTSREPO ]] || die "$DOTSREPO is not available"
 
 do$ACTION

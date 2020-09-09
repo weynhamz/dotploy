@@ -1,3 +1,13 @@
+DONE dry-run
+DONE diff
+update notification
+support _CATE
+support inteactive
+support autodeploy
+support easy manuniplate the dot files repo
+support easy deploy on new machine
+
+
 Version 0.3.4
 -------------
 

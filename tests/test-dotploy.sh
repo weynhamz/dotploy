@@ -150,6 +150,25 @@ _test_run "Shared dot files deployment" '
         "dotsrepo/__DOTDIR/.dotfile"
     )
     _make_layer "${repo_layer[@]}"
+    (
+        cd $TEST_FIELD/dotsrepo/
+        git init
+        git add -A .
+        git commit -m "Initial commit"
+    )
+    dotploy.sh deploy "git+file://$TEST_FIELD/dotsrepo/" "dotsdest"
+    _test_expect_symlink "dotsdest/.dotdir"  "$TEST_FIELD/dotsrepo/__DOTDIR/.dotdir"
+    _test_expect_symlink "dotsdest/.dotfile" "$TEST_FIELD/dotsrepo/__DOTDIR/.dotfile"
+'
+
+exit
+
+_test_run "Test deployment from git repo" '
+    repo_layer=(
+        "dotsrepo/__DOTDIR/.dotdir/"
+        "dotsrepo/__DOTDIR/.dotfile"
+    )
+    _make_layer "${repo_layer[@]}"
     dotploy.sh deploy "dotsrepo" "dotsdest"
     _test_expect_symlink "dotsdest/.dotdir"  "$TEST_FIELD/dotsrepo/__DOTDIR/.dotdir"
     _test_expect_symlink "dotsdest/.dotfile" "$TEST_FIELD/dotsrepo/__DOTDIR/.dotfile"
