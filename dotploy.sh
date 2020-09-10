@@ -1146,6 +1146,7 @@ print ">>>>>>> NEED LINK" $bldblu
 for i in "${need_link[@]}"
 do
     print $i $txtbld
+    echo LINK TO: ${plan[$i]}
 
     if interactive_confirm "Proceed?"
     then

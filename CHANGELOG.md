@@ -6,6 +6,8 @@ support inteactive
 support autodeploy
 support easy manuniplate the dot files repo
 support easy deploy on new machine
+need to be able to update the files from a git source
+need to be able to warn if have local changes
 
 
 Version 0.3.4
