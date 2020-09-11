@@ -700,17 +700,39 @@ _check() {
 
     [[ -e $DOTSREPO/$repath ]] && src=$DOTSREPO/$repath
     [[ -e $DOTSREPO/$repath.__SRC ]] && src=$DOTSREPO/$repath.__SRC
-    [[ -e $DOTSREPO/__USER.$USER/$repath ]] && src=$DOTSREPO/__USER.$USER/$repath
-    [[ -e $DOTSREPO/__USER.$USER/$repath.__SRC ]] && src=$DOTSREPO/__USER.$USER/$repath.__SRC
+    for cate in "${OPT_CATE[@]}"
+    do
+        [[ -e $DOTSREPO/__CATE.$cate/$repath ]] && src=$DOTSREPO/__CATE.$cate/$repath
+        [[ -e $DOTSREPO/__CATE.$cate/$repath.__SRC ]] && src=$DOTSREPO/__CATE.$cate/$repath.__SRC
+    done
     [[ -e $DOTSREPO/__HOST.$HOST/$repath ]] && src=$DOTSREPO/__HOST.$HOST/$repath
     [[ -e $DOTSREPO/__HOST.$HOST/$repath.__SRC ]] && src=$DOTSREPO/__HOST.$HOST/$repath.__SRC
+    for cate in "${OPT_CATE[@]}"
+    do
+        [[ -e $DOTSREPO/__HOST.$HOST/__CATE.$cate/$repath ]] && src=$DOTSREPO/__HOST.$HOST/__CATE.$cate/$repath
+        [[ -e $DOTSREPO/__HOST.$HOST/__CATE.$cate/$repath.__SRC ]] && src=$DOTSREPO/__HOST.$HOST/__CATE.$cate/$repath.__SRC
+    done
+    [[ -e $DOTSREPO/__USER.$USER/$repath ]] && src=$DOTSREPO/__USER.$USER/$repath
+    [[ -e $DOTSREPO/__USER.$USER/$repath.__SRC ]] && src=$DOTSREPO/__USER.$USER/$repath.__SRC
+    for cate in "${OPT_CATE[@]}"
+    do
+        [[ -e $DOTSREPO/__USER.$USER/__CATE.$cate/$repath ]] && src=$DOTSREPO/__USER.$USER/__CATE.$cate/$repath
+        [[ -e $DOTSREPO/__USER.$USER/__CATE.$cate/$repath.__SRC ]] && src=$DOTSREPO/__USER.$USER/__CATE.$cate/$repath.__SRC
+    done
     [[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath ]] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath
     [[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC ]] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/$repath.__SRC
+    for cate in "${OPT_CATE[@]}"
+    do
+        [[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/__CATE.$cate/$repath ]] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/__CATE.$cate/$repath
+        [[ -e $DOTSREPO/__HOST.$HOST/__USER.$USER/__CATE.$cate/$repath.__SRC ]] && src=$DOTSREPO/__HOST.$HOST/__USER.$USER/__CATE.$cate/$repath.__SRC
+    done
 
     # can not find the source
     [[ -z $src ]] && {
         return 5
     }
+
+    src=$(realpath $src 2>/dev/null || echo $src)
 
     if [[ -h $dst ]]
     then
@@ -728,8 +750,8 @@ _check() {
             then
               return 0
             else
-                echo csrc $csrc
-                echo aaa $src
+              echo csrc $csrc
+              echo aaa $src
               return 2
             fi
         else
@@ -836,16 +858,8 @@ _symlink() {
 
     local repath
 
-    repath=$src
+    repath=$dst
     repath=$(echo $repath | sed 's/[^/]\+$//')
-    repath=${repath#$DOTSREPO}
-    repath=${repath#/}
-    repath=${repath#__HOST.$HOST}
-    repath=${repath#/}
-    repath=${repath#__USER.$USER}
-    repath=${repath#/}
-    repath=$(echo $repath | sed 's/^__CATE\.[^/]\+//')
-    repath=${repath#/}
 
     # for nested path, need to mkdir parent first
     [[ -n "$repath" ]] && {
@@ -856,7 +870,7 @@ _symlink() {
             DEPTH=$(( $DEPTH + 1 ))
             if [[ $OPT_DRY_RUN != 1 ]]
             then
-                print "$(_mkdir $BAKPATH/$(dirname "$repath") && mv -v $DESTHOME/$repath $BAKPATH/$(dirname "$repath"))"
+                print "$(_mkdir $BAKPATH/${repath#$DESTHOME} && mv -v $repath $BAKPATH/${repath#$DESTHOME})"
             fi
             DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
@@ -864,7 +878,7 @@ _symlink() {
         DEPTH=$(( $DEPTH + 1 ))
         if [[ $OPT_DRY_RUN != 1 ]]
         then
-            print "$(_mkdir $DESTHOME/$repath)"
+            print "$(_mkdir $repath)"
         fi
         DEPTH=$(( $DEPTH - 1 ))
     }
@@ -894,7 +908,7 @@ _symlink() {
             DEPTH=$(( $DEPTH + 1 ))
             if [[ $OPT_DRY_RUN != 1 ]]
             then
-                print "$(_mkdir $BAKPATH/$repath && mv -v $dst $BAKPATH/$repath)"
+                print "$(_mkdir $BAKPATH/${repath#$DESTHOME} && mv -v $dst $BAKPATH/${repath#$DESTHOME})"
             fi
             DEPTH=$(( $DEPTH - 1 ))
             DEPTH=$(( $DEPTH - 1 ))
@@ -1028,6 +1042,9 @@ declare -a need_prune
 
 declare -A plan
 
+    # shared dotfiles deploy
+    _deploy $DOTSREPO $DESTHOME
+
     for cate in "${OPT_CATE[@]}"
     do
         if [[ -d $DOTSREPO/__CATE.$cate ]]
@@ -1036,25 +1053,46 @@ declare -A plan
         fi
     done
 
-    # shared dotfiles deploy
-    _deploy $DOTSREPO $DESTHOME
-
     # host based dotfies deploy
     if [[ -d $DOTSREPO/__HOST.$HOST ]]
     then
         _deploy $DOTSREPO/__HOST.$HOST $DESTHOME
+
+        for cate in "${OPT_CATE[@]}"
+        do
+            if [[ -d $DOTSREPO/__HOST.$HOST/__CATE.$cate ]]
+            then
+                _deploy $DOTSREPO/__HOST.$HOST/__CATE.$cate $DESTHOME
+            fi
+        done
     fi
 
     # user based dotfies deploy
     if [[ -d $DOTSREPO/__USER.$USER ]]
     then
         _deploy $DOTSREPO/__USER.$USER $DESTHOME
+
+        for cate in "${OPT_CATE[@]}"
+        do
+            if [[ -d $DOTSREPO/__USER.$USER/__CATE.$cate ]]
+            then
+                _deploy $DOTSREPO/__USER.$USER/__CATE.$cate $DESTHOME
+            fi
+        done
     fi
 
     # host user based dotfies deploy
     if [[ -d $DOTSREPO/__HOST.$HOST/__USER.$USER ]]
     then
         _deploy $DOTSREPO/__HOST.$HOST/__USER.$USER $DESTHOME
+
+        for cate in "${OPT_CATE[@]}"
+        do
+            if [[ -d $DOTSREPO/__HOST.$HOST/__USER.$USER/__CATE.$cate ]]
+            then
+                _deploy $DOTSREPO/__HOST.$HOST/__USER.$USER/__CATE.$cate $DESTHOME
+            fi
+        done
     fi
 
 declare -a all_good

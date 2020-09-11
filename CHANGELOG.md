@@ -8,6 +8,9 @@ support easy manuniplate the dot files repo
 support easy deploy on new machine
 need to be able to update the files from a git source
 need to be able to warn if have local changes
+upon removal, there are some files that is not existed
+Need to be able to replace the file in the repo with the curent target file
+Need to be able to remove the file in the repo
 
 
 Version 0.3.4
