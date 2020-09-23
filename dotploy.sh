@@ -553,6 +553,14 @@ ensure_source_git() (
 
     _cd "$dir"
 
+    if _git_has_local_change || { _git_is_head_detached && ! _git_is_head_in_remote; } || { _git_is_head_tracking_remote && ! _git_is_head_in_remote; }
+    then
+        printw "Our clone of the repository $(pwd) has local changes, abort further operation, please resolve first."
+        exec 1>&2
+        git diff
+        exec 1>&1
+    fi
+
     local ref=$(get_fragment "$src"  "ref")
     if [[ -z $ref ]] || { ! _git_is_ref_valid $ref && printw "$ref is not a valid git ref, use HEAD of origin."; }
     then
@@ -564,7 +572,7 @@ ensure_source_git() (
     then
         if _git_has_local_change || { _git_is_head_detached && ! _git_is_head_in_remote; } || { _git_is_head_tracking_remote && ! _git_is_head_in_remote; }
         then
-            printw "Our clone of the repository $(pwd) has local changes, abort further operation, please resolve first."
+            :
         else
             if [[ $ref =~ ^refs/remotes/origin ]] && [[ $ref != refs/remotes/origin/HEAD ]]
             then

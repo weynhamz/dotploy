@@ -11,7 +11,11 @@ need to be able to warn if have local changes
 upon removal, there are some files that is not existed
 Need to be able to replace the file in the repo with the curent target file
 Need to be able to remove the file in the repo
-
+Need to be able to add the current file into the host override
+Need to prompt to push current changes to upstream
+Need to add the ability to run post command after colone a git repo
+NEED to be able to preserve/warn local chagnes
+FOR GIT REMOTE REPO, needs a way to detect if there is local chagnes
 
 Version 0.3.4
 -------------
