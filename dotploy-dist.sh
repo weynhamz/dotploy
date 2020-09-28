@@ -1145,6 +1145,12 @@ for K in "${!plan[@]}"
 do
 #    echo $K
 #    echo ${plan[$K]}
+
+    [[ ${plan[$K]} =~ ^.*.__SRC$ ]] && {
+        print "Update all git source"
+        ensure_source "$(get_src "${plan[$K]}")" || return
+    }
+
     _check $K
 
     local status=$?
