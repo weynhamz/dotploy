@@ -24,8 +24,6 @@
 #
 #################################################################################
 
-set -e
-
 # @@BASHLIB BEGIN@@
 
 # Function: _abspath
@@ -510,6 +508,7 @@ ensure_source() {
 }
 
 ensure_source_git() (
+set -e
     local src=$1
     local dir=$(get_dir "$src")
 
@@ -618,6 +617,7 @@ ensure_source_git() (
         # collect garbage
         git gc --prune=now --aggresive
     fi
+set +e
 )
 
 ensure_source_local() (

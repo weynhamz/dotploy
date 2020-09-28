@@ -16,6 +16,7 @@ Need to prompt to push current changes to upstream
 Need to add the ability to run post command after colone a git repo
 NEED to be able to preserve/warn local chagnes
 FOR GIT REMOTE REPO, needs a way to detect if there is local chagnes
+NEED TO enable 'set -e', but currently the use of quick check breaks it
 
 Version 0.3.4
 -------------
