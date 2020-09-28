@@ -1316,6 +1316,9 @@ do
         --force )
             OPT_FORCE=1
         ;;
+        --debug )
+            set -xv
+        ;;
         --dry-run )
             OPT_DRY_RUN=1
         ;;
