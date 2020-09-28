@@ -515,6 +515,7 @@ ensure_source_git() (
 
     local url=$(get_url "$src")
     url=${url##*git+}
+    url=${url##*ssh:\/\/}
     url=${url##*file:\/\/}
     url=${url%%#*}
 
