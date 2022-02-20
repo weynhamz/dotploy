@@ -671,12 +671,14 @@ _prune() {
 
         _check $file
 
+        # link presented in the log, but can not found in the dots repo anymore
         [[ $? -eq 5 ]] && {
             DEPTH=$(( $DEPTH + 1 ))
             DEPTH=$(( $DEPTH + 1 ))
             [[ $status -eq 0 ]] && need_prune+=("$file")
             if [[ $OPT_DRY_RUN != 1 ]]
             then
+                # TODO, backup instead of delete directly
                 print "$(rm -v $file)"
             fi
             DEPTH=$(( $DEPTH - 1 ))
@@ -739,6 +741,7 @@ _check() {
     done
 
     # can not find the source
+    # dst is in log, but the a src can not be found in the dots repo
     [[ -z $src ]] && {
         return 5
     }
@@ -930,7 +933,9 @@ _symlink() {
     }
 
     # symlink the file in the repo
-    [[ $status -ne 0 ]] && [[ $status -ne 4 ]] && {
+    {
+        [[ $status -eq 1 ]] || [[ $status -eq 2 ]] || [[ $status -eq 3 ]]
+    } && {
         DEPTH=$(( $DEPTH + 1 ))
         debug 'LINK:'$'\t'"$dst"
         DEPTH=$(( $DEPTH + 1 ))
@@ -1226,17 +1231,6 @@ done
 
 print ">>>>>>> NEED REMOVE" $bldblu
 for i in "${remove[@]}"
-do
-    print $i $txtbld
-
-    if interactive_confirm "Proceed?"
-    then
-        echo ${plan[$i]}
-        echo $i
-        _symlink ${plan[$i]} $i
-    fi
-done
-for i in "${need_prune[@]}"
 do
     print $i $txtbld
 
