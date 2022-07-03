@@ -1124,7 +1124,7 @@ do
 #    echo ${plan[$K]}
 
     [[ ${plan[$K]} =~ ^.*.__SRC$ ]] && {
-        print "Update all git source"
+        print "Check source ${plan[$K]}"
         ensure_source "$(get_src "${plan[$K]}")" || return
     }
 
